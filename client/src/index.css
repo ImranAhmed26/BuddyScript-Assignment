@@ -1,0 +1,151 @@
+/* The provided design system (bootstrap + common/main/responsive) is loaded in
+   index.html. Only a few app-level helpers live here. */
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+.bs-center-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bs-error-text {
+  color: #e5484d;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.bs-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #d7e3ff;
+  border-top-color: #377dff;
+  border-radius: 50%;
+  animation: bs-spin 0.7s linear infinite;
+}
+
+@keyframes bs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bs-clickable {
+  cursor: pointer;
+}
+
+/* Modal for "who liked" lists. */
+.bs-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 32, 50, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 16px;
+}
+
+.bs-modal {
+  background: #fff;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 380px;
+  max-height: 70vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.bs-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #eef0f4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bs-modal-body {
+  padding: 8px 0;
+  overflow-y: auto;
+}
+
+.bs-liker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+}
+
+.bs-avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  background: #eef0f4;
+  flex-shrink: 0;
+}
+
+.bs-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #377dff;
+  color: #fff;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.bs-inline-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.bs-muted {
+  color: #8a94a6;
+  font-size: 13px;
+}
+
+.bs-composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.bs-reaction-active {
+  color: #377dff !important;
+  font-weight: 600;
+}
+
+.bs-image-preview {
+  position: relative;
+  margin-top: 12px;
+  display: inline-block;
+}
+
+.bs-image-preview img {
+  max-height: 220px;
+  border-radius: 8px;
+}
+
+.bs-image-preview button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
