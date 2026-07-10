@@ -1,0 +1,130 @@
+// Buddy Script — data model
+// Designed for read-heavy scale: denormalized counts (no COUNT(*) on reads),
+// composite indexes for feed queries, cursor pagination, cascade deletes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  posts         Post[]
+  comments      Comment[]
+  postLikes     PostLike[]
+  commentLikes  CommentLike[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Post {
+  id         String     @id @default(cuid())
+  authorId   String
+  content    String     @db.Text
+  imageUrl   String?
+  visibility Visibility @default(PUBLIC)
+
+  // Denormalized aggregates — kept in sync transactionally so feed reads never COUNT(*).
+  likeCount    Int @default(0)
+  commentCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author   User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    PostLike[]
+
+  // Global newest-first feed.
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  // Public feed slice + a given author's posts, newest-first.
+  @@index([visibility, createdAt(sort: Desc)])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@map("posts")
+}
+
+model Comment {
+  id       String  @id @default(cuid())
+  postId   String
+  authorId String
+  parentId String? // null => top-level comment; set => reply to that comment
+  content  String  @db.Text
+
+  likeCount  Int @default(0)
+  replyCount Int @default(0) // maintained for top-level comments
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[]     @relation("CommentReplies")
+  likes   CommentLike[]
+
+  // Top-level comments of a post, oldest-first (chronological thread).
+  @@index([postId, parentId, createdAt])
+  // Replies under a comment.
+  @@index([parentId, createdAt])
+  @@map("comments")
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId]) // one like per user per post (idempotent toggle)
+  @@index([postId, createdAt]) // "who liked" listing, newest-first
+  @@map("post_likes")
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId, createdAt])
+  @@map("comment_likes")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique // sha-256 of the raw token; raw value only lives in the cookie
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
