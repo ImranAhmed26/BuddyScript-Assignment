@@ -56,9 +56,15 @@ const visibilityWhere = (viewerId: string): Prisma.PostWhereInput => ({
   OR: [{ visibility: 'PUBLIC' }, { authorId: viewerId }],
 });
 
-export async function listFeed(viewerId: string, { cursor, limit }: Pagination): Promise<Page<PostDTO>> {
+export async function listFeed(
+  viewerId: string,
+  { cursor, limit, q }: Pagination & { q?: string },
+): Promise<Page<PostDTO>> {
+  const where: Prisma.PostWhereInput = q
+    ? { AND: [visibilityWhere(viewerId), { content: { contains: q, mode: 'insensitive' } }] }
+    : visibilityWhere(viewerId);
   const rows = await prisma.post.findMany({
-    where: visibilityWhere(viewerId),
+    where,
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: limit + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

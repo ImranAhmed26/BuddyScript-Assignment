@@ -10,12 +10,17 @@ import { queryKeys } from './keys';
 
 const PAGE_SIZE = 10;
 
-export function useFeed() {
+export function useFeed(search: string) {
+  const term = search.trim();
   return useInfiniteQuery({
-    queryKey: queryKeys.feed,
+    queryKey: [...queryKeys.feed, term],
     queryFn: async ({ pageParam }) => {
       const { data } = await api.get<Page<Post>>('/posts', {
-        params: { limit: PAGE_SIZE, ...(pageParam ? { cursor: pageParam } : {}) },
+        params: {
+          limit: PAGE_SIZE,
+          ...(term ? { q: term } : {}),
+          ...(pageParam ? { cursor: pageParam } : {}),
+        },
       });
       return data;
     },
@@ -53,6 +58,25 @@ export function useCreatePost() {
   });
 }
 
+export function useUpdatePost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; content: string; visibility: Visibility }) => {
+      const { data } = await api.patch<Post>(`/posts/${input.id}`, {
+        content: input.content,
+        visibility: input.visibility,
+      });
+      return data;
+    },
+    // Splice the server's authoritative post back into every feed cache.
+    onSuccess: (post) => {
+      qc.setQueriesData<FeedData>({ queryKey: queryKeys.feed }, (data) =>
+        patchPostInFeed(data, post.id, () => post),
+      );
+    },
+  });
+}
+
 export function useDeletePost() {
   const qc = useQueryClient();
   return useMutation({
@@ -73,11 +97,11 @@ export function useTogglePostLike() {
         : await api.post<LikeResult>(`/posts/${post.id}/like`);
       return { postId: post.id, result: data };
     },
-    // Optimistic toggle for snappy UX.
+    // Optimistic toggle across every feed cache (search + unfiltered).
     onMutate: async (post) => {
       await qc.cancelQueries({ queryKey: queryKeys.feed });
-      const previous = qc.getQueryData<FeedData>(queryKeys.feed);
-      qc.setQueryData<FeedData>(queryKeys.feed, (data) =>
+      const previous = qc.getQueriesData<FeedData>({ queryKey: queryKeys.feed });
+      qc.setQueriesData<FeedData>({ queryKey: queryKeys.feed }, (data) =>
         patchPostInFeed(data, post.id, (p) => ({
           ...p,
           likedByMe: !p.likedByMe,
@@ -87,11 +111,11 @@ export function useTogglePostLike() {
       return { previous };
     },
     onError: (_err, _post, ctx) => {
-      if (ctx?.previous) qc.setQueryData(queryKeys.feed, ctx.previous);
+      ctx?.previous?.forEach(([key, data]) => qc.setQueryData(key, data));
     },
     // Reconcile with the authoritative server counts.
     onSuccess: ({ postId, result }) => {
-      qc.setQueryData<FeedData>(queryKeys.feed, (data) =>
+      qc.setQueriesData<FeedData>({ queryKey: queryKeys.feed }, (data) =>
         patchPostInFeed(data, postId, (p) => ({ ...p, ...result })),
       );
     },

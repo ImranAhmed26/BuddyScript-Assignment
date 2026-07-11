@@ -69,6 +69,19 @@ export function useCreateReply(commentId: string, postId: string) {
   });
 }
 
+export function useUpdateComment(listKey: readonly unknown[]) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; content: string }) => {
+      const { data } = await api.patch<Comment>(`/comments/${input.id}`, { content: input.content });
+      return data;
+    },
+    onSuccess: (comment) => {
+      qc.setQueryData<CommentData>(listKey, (data) => patchComment(data, comment.id, () => comment));
+    },
+  });
+}
+
 export function useDeleteComment(postId: string) {
   const qc = useQueryClient();
   return useMutation({

@@ -10,9 +10,11 @@ liked, and you can see exactly who liked each one.
 - **Auth:** JWT access tokens (in-memory) + rotating, hashed refresh tokens (httpOnly cookie)
 
 The UI reuses the provided Buddy Script design (Bootstrap 5 + the supplied
-`common/main/responsive` CSS). Decorative-only elements from the mockups
-(notifications, chat, friend requests, sidebars) are intentionally omitted so the
-implementation stays focused on the feed, per the brief.
+`common/main/responsive` CSS), including the full navigation bar, stories strip,
+light/dark theme, and both sidebars. A few purely decorative destinations that
+have no MVP backend (chat, friend requests, notifications feed, social graph) are
+rendered as faithful shells — the icons, dropdowns, and sidebar cards match the
+mockup but list static/empty content rather than live data.
 
 ---
 
@@ -29,6 +31,18 @@ implementation stays focused on the feed, per the brief.
 | Comment, and reply to comments | ✅ 2-level threads |
 | Like / unlike comments and replies | ✅ |
 | See who liked a post / comment / reply | ✅ "Liked by" modal |
+
+### Beyond the brief (design parity)
+
+| Feature | Notes |
+| --- | --- |
+| Edit a post (content + visibility) | Owner-only, from the post `⋮` menu |
+| Edit a comment / reply | Owner-only, inline |
+| Search posts | Backend `GET /posts?q=` (indexed), debounced search box |
+| Light / dark theme | Uses the design's `._dark_wrapper` theme, persisted |
+| Share (copy link) | Copies a permalink to the post |
+| Hide a post | Dismisses it from the current session view |
+| Full nav, stories, sidebars | Rendered to match the mockup |
 
 ---
 

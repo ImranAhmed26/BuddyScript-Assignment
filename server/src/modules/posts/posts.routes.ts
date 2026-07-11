@@ -4,7 +4,7 @@ import { requireAuth } from '../../middleware/auth.js';
 import { validate } from '../../middleware/validate.js';
 import { uploadImage } from '../../lib/upload.js';
 import { paginationSchema } from '../../lib/pagination.js';
-import { createPostSchema, postIdParams, updatePostSchema } from './posts.schemas.js';
+import { createPostSchema, feedQuerySchema, postIdParams, updatePostSchema } from './posts.schemas.js';
 import * as postsController from './posts.controller.js';
 
 export const postsRouter = Router();
@@ -12,7 +12,7 @@ export const postsRouter = Router();
 // Every feed route is protected.
 postsRouter.use(requireAuth);
 
-postsRouter.get('/', validate({ query: paginationSchema }), asyncHandler(postsController.list));
+postsRouter.get('/', validate({ query: feedQuerySchema }), asyncHandler(postsController.list));
 
 postsRouter.post(
   '/',

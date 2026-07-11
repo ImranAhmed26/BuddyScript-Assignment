@@ -1,10 +1,11 @@
 import type { Request, Response } from 'express';
 import type { Pagination } from '../../lib/pagination.js';
 import { uploadPublicPath } from '../../lib/upload.js';
+import type { FeedQuery } from './posts.schemas.js';
 import * as postsService from './posts.service.js';
 
 export async function list(req: Request, res: Response): Promise<void> {
-  const page = await postsService.listFeed(req.userId!, res.locals.query as Pagination);
+  const page = await postsService.listFeed(req.userId!, res.locals.query as FeedQuery);
   res.json(page);
 }
 

@@ -8,6 +8,7 @@ import {
   useCreateComment,
   useCreateReply,
   useDeleteComment,
+  useUpdateComment,
   useToggleCommentLike,
   useCommentLikers,
 } from '../api/comments';
@@ -81,11 +82,21 @@ function CommentItem({
   const user = useAuthStore((s) => s.user);
   const toggleLike = useToggleCommentLike(listKey);
   const deleteComment = useDeleteComment(postId);
+  const updateComment = useUpdateComment(listKey);
   const createReply = useCreateReply(comment.id, postId);
 
   const [showReplies, setShowReplies] = useState(false);
   const [replying, setReplying] = useState(false);
   const [showLikers, setShowLikers] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.content);
+
+  const saveEdit = async () => {
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+    await updateComment.mutateAsync({ id: comment.id, content: trimmed });
+    setEditing(false);
+  };
 
   const replies = useReplies(comment.id, showReplies);
   const likers = useCommentLikers(comment.id, showLikers);
@@ -106,42 +117,75 @@ function CommentItem({
               <h4 className="_comment_name_title">{fullName(comment.author)}</h4>
             </div>
           </div>
-          <div className="_comment_status">
-            <p className="_comment_status_text">
-              <span>{comment.content}</span>
-            </p>
-          </div>
+          {editing ? (
+            <div style={{ marginTop: 4 }}>
+              <textarea
+                className="form-control"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                rows={2}
+                style={{ borderRadius: 8, resize: 'vertical' }}
+              />
+              <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+                <button
+                  type="button"
+                  className="bs-inline-btn"
+                  style={{ color: '#377dff', fontWeight: 600 }}
+                  disabled={updateComment.isPending}
+                  onClick={() => void saveEdit()}
+                >
+                  {updateComment.isPending ? 'Saving…' : 'Save'}
+                </button>
+                <button type="button" className="bs-inline-btn bs-muted" onClick={() => { setEditing(false); setDraft(comment.content); }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="_comment_status">
+              <p className="_comment_status_text">
+                <span>{comment.content}</span>
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="bs-comment-meta">
-          <button
-            type="button"
-            className={`bs-inline-btn ${comment.likedByMe ? 'bs-reaction-active' : ''}`}
-            onClick={() => toggleLike.mutate(comment)}
-          >
-            {comment.likedByMe ? 'Liked' : 'Like'}
-          </button>
-          {!isReply && (
-            <button type="button" className="bs-inline-btn" onClick={() => setReplying((v) => !v)}>
-              Reply
-            </button>
-          )}
-          {isMine && (
+        {!editing && (
+          <div className="bs-comment-meta">
             <button
               type="button"
-              className="bs-inline-btn"
-              onClick={() => deleteComment.mutate({ id: comment.id, parentId: comment.parentId })}
+              className={`bs-inline-btn ${comment.likedByMe ? 'bs-reaction-active' : ''}`}
+              onClick={() => toggleLike.mutate(comment)}
             >
-              Delete
+              {comment.likedByMe ? 'Liked' : 'Like'}
             </button>
-          )}
-          {comment.likeCount > 0 && (
-            <button type="button" className="bs-like-pill bs-inline-btn" onClick={() => setShowLikers(true)}>
-              👍 {comment.likeCount}
-            </button>
-          )}
-          <span className="_time_link">{timeAgo(comment.createdAt)}</span>
-        </div>
+            {!isReply && (
+              <button type="button" className="bs-inline-btn" onClick={() => setReplying((v) => !v)}>
+                Reply
+              </button>
+            )}
+            {isMine && (
+              <button type="button" className="bs-inline-btn" onClick={() => { setDraft(comment.content); setEditing(true); }}>
+                Edit
+              </button>
+            )}
+            {isMine && (
+              <button
+                type="button"
+                className="bs-inline-btn"
+                onClick={() => deleteComment.mutate({ id: comment.id, parentId: comment.parentId })}
+              >
+                Delete
+              </button>
+            )}
+            {comment.likeCount > 0 && (
+              <button type="button" className="bs-like-pill bs-inline-btn" onClick={() => setShowLikers(true)}>
+                👍 {comment.likeCount}
+              </button>
+            )}
+            <span className="_time_link">{timeAgo(comment.createdAt)}</span>
+          </div>
+        )}
 
         {!isReply && comment.replyCount > 0 && (
           <button

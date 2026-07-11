@@ -1,17 +1,23 @@
 import { useFeed } from '../api/posts';
 import { getErrorMessage } from '../lib/apiClient';
+import { useUiStore } from '../store/uiStore';
 import { Navbar } from '../components/Navbar';
+import { ThemeSwitch } from '../components/ThemeSwitch';
+import { Stories } from '../components/Stories';
 import { LeftSidebar } from '../components/LeftSidebar';
 import { RightSidebar } from '../components/RightSidebar';
 import { CreatePost } from '../components/CreatePost';
 import { PostCard } from '../components/PostCard';
 
 export default function FeedPage() {
-  const feed = useFeed();
+  const search = useUiStore((s) => s.search);
+  const theme = useUiStore((s) => s.theme);
+  const feed = useFeed(search);
   const posts = feed.data?.pages.flatMap((p) => p.items) ?? [];
 
   return (
-    <div className="_layout _layout_main_wrapper">
+    <div className={`_layout _layout_main_wrapper ${theme === 'dark' ? '_dark_wrapper' : ''}`}>
+      <ThemeSwitch />
       <div className="_main_layout">
         <Navbar />
 
@@ -27,7 +33,14 @@ export default function FeedPage() {
               <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12">
                 <div className="_layout_middle_wrap">
                   <div className="_layout_middle_inner">
+                    <Stories />
                     <CreatePost />
+
+                    {search.trim() && (
+                      <p className="bs-muted" style={{ padding: '4px 4px 12px' }}>
+                        Showing results for “{search.trim()}”
+                      </p>
+                    )}
 
                     {feed.isLoading ? (
                       <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
@@ -39,7 +52,9 @@ export default function FeedPage() {
                       </p>
                     ) : posts.length === 0 ? (
                       <p className="bs-muted" style={{ textAlign: 'center', padding: 24 }}>
-                        No posts yet — be the first to share something.
+                        {search.trim()
+                          ? 'No posts match your search.'
+                          : 'No posts yet — be the first to share something.'}
                       </p>
                     ) : (
                       <>

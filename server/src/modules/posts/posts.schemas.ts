@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import { paginationSchema } from '../../lib/pagination.js';
+
+/** Feed listing: cursor pagination plus an optional full-text search term. */
+export const feedQuerySchema = paginationSchema.extend({
+  q: z.string().trim().max(100).optional(),
+});
 
 export const createPostSchema = z.object({
   // Either content or an uploaded image is required (enforced in the service).
@@ -19,3 +25,4 @@ export const postIdParams = z.object({ id: z.string().cuid() });
 
 export type CreatePostInput = z.infer<typeof createPostSchema>;
 export type UpdatePostInput = z.infer<typeof updatePostSchema>;
+export type FeedQuery = z.infer<typeof feedQuerySchema>;
