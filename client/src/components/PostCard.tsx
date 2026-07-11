@@ -64,21 +64,29 @@ export function PostCard({ post }: { post: Post }) {
       <div className="_feed_inner_timeline_total_reacts _padd_r24 _padd_l24 _mar_b26">
         <div className="_feed_inner_timeline_total_reacts_image">
           {post.likeCount > 0 ? (
-            <button type="button" className="bs-inline-btn" onClick={() => setShowLikers(true)}>
-              <p className="_feed_inner_timeline_total_reacts_para">
-                👍 {post.likeCount} {post.likeCount === 1 ? 'like' : 'likes'}
-              </p>
+            <button
+              type="button"
+              className="bs-inline-btn"
+              style={{ fontSize: 14 }}
+              onClick={() => setShowLikers(true)}
+            >
+              👍 {post.likeCount} {post.likeCount === 1 ? 'like' : 'likes'}
             </button>
           ) : (
-            <p className="_feed_inner_timeline_total_reacts_para bs-muted">Be the first to like</p>
+            <span className="bs-muted" style={{ fontSize: 13 }}>
+              Be the first to like
+            </span>
           )}
         </div>
         <div className="_feed_inner_timeline_total_reacts_txt">
-          <p className="_feed_inner_timeline_total_reacts_para1">
-            <button type="button" className="bs-inline-btn" onClick={() => setShowComments((v) => !v)}>
-              <span>{post.commentCount}</span> Comment{post.commentCount === 1 ? '' : 's'}
-            </button>
-          </p>
+          <button
+            type="button"
+            className="bs-inline-btn"
+            style={{ fontSize: 14 }}
+            onClick={() => setShowComments((v) => !v)}
+          >
+            <span>{post.commentCount}</span> Comment{post.commentCount === 1 ? '' : 's'}
+          </button>
         </div>
       </div>
 

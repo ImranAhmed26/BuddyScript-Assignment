@@ -100,7 +100,7 @@ function CommentItem({
         <Avatar user={comment.author} size={40} className="_comment_img1" />
       </div>
       <div className="_comment_area" style={{ flex: 1 }}>
-        <div className="_comment_details">
+        <div className="_comment_details" style={{ marginBottom: 6 }}>
           <div className="_comment_details_top">
             <div className="_comment_name">
               <h4 className="_comment_name_title">{fullName(comment.author)}</h4>
@@ -111,60 +111,36 @@ function CommentItem({
               <span>{comment.content}</span>
             </p>
           </div>
+        </div>
 
-          {comment.likeCount > 0 && (
-            <div
-              className="_total_reactions bs-clickable"
-              onClick={() => setShowLikers(true)}
-              role="button"
-            >
-              <div className="_total_react">
-                <span className="_reaction_like">👍</span>
-              </div>
-              <span className="_total">{comment.likeCount}</span>
-            </div>
+        <div className="bs-comment-meta">
+          <button
+            type="button"
+            className={`bs-inline-btn ${comment.likedByMe ? 'bs-reaction-active' : ''}`}
+            onClick={() => toggleLike.mutate(comment)}
+          >
+            {comment.likedByMe ? 'Liked' : 'Like'}
+          </button>
+          {!isReply && (
+            <button type="button" className="bs-inline-btn" onClick={() => setReplying((v) => !v)}>
+              Reply
+            </button>
           )}
-
-          <div className="_comment_reply">
-            <div className="_comment_reply_num">
-              <ul className="_comment_reply_list">
-                <li>
-                  <button
-                    type="button"
-                    className={`bs-inline-btn ${comment.likedByMe ? 'bs-reaction-active' : ''}`}
-                    onClick={() => toggleLike.mutate(comment)}
-                  >
-                    {comment.likedByMe ? 'Liked' : 'Like'}
-                  </button>
-                </li>
-                {!isReply && (
-                  <li>
-                    <button
-                      type="button"
-                      className="bs-inline-btn"
-                      onClick={() => setReplying((v) => !v)}
-                    >
-                      Reply
-                    </button>
-                  </li>
-                )}
-                {isMine && (
-                  <li>
-                    <button
-                      type="button"
-                      className="bs-inline-btn"
-                      onClick={() => deleteComment.mutate({ id: comment.id, parentId: comment.parentId })}
-                    >
-                      Delete
-                    </button>
-                  </li>
-                )}
-                <li>
-                  <span className="_time_link">.{timeAgo(comment.createdAt)}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
+          {isMine && (
+            <button
+              type="button"
+              className="bs-inline-btn"
+              onClick={() => deleteComment.mutate({ id: comment.id, parentId: comment.parentId })}
+            >
+              Delete
+            </button>
+          )}
+          {comment.likeCount > 0 && (
+            <button type="button" className="bs-like-pill bs-inline-btn" onClick={() => setShowLikers(true)}>
+              👍 {comment.likeCount}
+            </button>
+          )}
+          <span className="_time_link">{timeAgo(comment.createdAt)}</span>
         </div>
 
         {!isReply && comment.replyCount > 0 && (

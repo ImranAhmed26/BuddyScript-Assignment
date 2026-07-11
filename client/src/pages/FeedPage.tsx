@@ -1,6 +1,8 @@
 import { useFeed } from '../api/posts';
 import { getErrorMessage } from '../lib/apiClient';
 import { Navbar } from '../components/Navbar';
+import { LeftSidebar } from '../components/LeftSidebar';
+import { RightSidebar } from '../components/RightSidebar';
 import { CreatePost } from '../components/CreatePost';
 import { PostCard } from '../components/PostCard';
 
@@ -12,45 +14,61 @@ export default function FeedPage() {
     <div className="_layout _layout_main_wrapper">
       <div className="_main_layout">
         <Navbar />
+
         <div className="container _custom_container">
           <div className="_layout_inner_wrap">
-            <div className="row justify-content-center">
-              <div className="col-xl-7 col-lg-9 col-md-12 col-sm-12">
-                <div className="_layout_middle_wrap _mar_t30">
-                  <CreatePost />
+            <div className="row">
+              {/* Left sidebar */}
+              <div className="col-xl-3 col-lg-3 col-md-12 col-sm-12">
+                <LeftSidebar />
+              </div>
 
-                  {feed.isLoading ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
-                      <div className="bs-spinner" />
-                    </div>
-                  ) : feed.isError ? (
-                    <p className="bs-error-text">{getErrorMessage(feed.error, 'Could not load the feed')}</p>
-                  ) : posts.length === 0 ? (
-                    <p className="bs-muted" style={{ textAlign: 'center', padding: 24 }}>
-                      No posts yet — be the first to share something.
-                    </p>
-                  ) : (
-                    <>
-                      {posts.map((post) => (
-                        <PostCard key={post.id} post={post} />
-                      ))}
+              {/* Feed */}
+              <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12">
+                <div className="_layout_middle_wrap">
+                  <div className="_layout_middle_inner">
+                    <CreatePost />
 
-                      {feed.hasNextPage && (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: 16 }}>
-                          <button
-                            type="button"
-                            className="_social_login_form_btn_link _btn1"
-                            style={{ width: 'auto', padding: '10px 28px' }}
-                            onClick={() => feed.fetchNextPage()}
-                            disabled={feed.isFetchingNextPage}
-                          >
-                            {feed.isFetchingNextPage ? 'Loading…' : 'Load more'}
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
+                    {feed.isLoading ? (
+                      <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+                        <div className="bs-spinner" />
+                      </div>
+                    ) : feed.isError ? (
+                      <p className="bs-error-text">
+                        {getErrorMessage(feed.error, 'Could not load the feed')}
+                      </p>
+                    ) : posts.length === 0 ? (
+                      <p className="bs-muted" style={{ textAlign: 'center', padding: 24 }}>
+                        No posts yet — be the first to share something.
+                      </p>
+                    ) : (
+                      <>
+                        {posts.map((post) => (
+                          <PostCard key={post.id} post={post} />
+                        ))}
+
+                        {feed.hasNextPage && (
+                          <div style={{ display: 'flex', justifyContent: 'center', padding: 16 }}>
+                            <button
+                              type="button"
+                              className="_social_login_form_btn_link _btn1"
+                              style={{ width: 'auto', padding: '10px 28px' }}
+                              onClick={() => feed.fetchNextPage()}
+                              disabled={feed.isFetchingNextPage}
+                            >
+                              {feed.isFetchingNextPage ? 'Loading…' : 'Load more'}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
+              </div>
+
+              {/* Right sidebar */}
+              <div className="col-xl-3 col-lg-3 col-md-12 col-sm-12">
+                <RightSidebar />
               </div>
             </div>
           </div>

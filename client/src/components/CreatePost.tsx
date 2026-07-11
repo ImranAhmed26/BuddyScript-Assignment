@@ -49,19 +49,18 @@ export function CreatePost() {
   return (
     <div className="_feed_inner_text_area _b_radious6 _padd_b24 _padd_t24 _padd_r24 _padd_l24 _mar_b16">
       <form onSubmit={onSubmit}>
-        <div className="_feed_inner_text_area_box">
+        <div className="_feed_inner_text_area_box" style={{ gap: 12 }}>
           <div className="_feed_inner_text_area_box_image">
             {user && <Avatar user={user} size={45} />}
           </div>
-          <div className="form-floating _feed_inner_text_area_box_form" style={{ flex: 1 }}>
-            <textarea
-              className="form-control _textarea"
-              placeholder="Write something ..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              style={{ minHeight: 60 }}
-            />
-          </div>
+          <textarea
+            className="form-control"
+            placeholder="Write something ..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={2}
+            style={{ flex: 1, resize: 'vertical', minHeight: 56, borderRadius: 10 }}
+          />
         </div>
 
         {preview && (

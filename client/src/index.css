@@ -126,6 +126,33 @@ body {
   font-weight: 600;
 }
 
+/* Clean comment action row (replaces the design's absolutely-positioned
+   reaction pill, which overlaps on short comments). */
+.bs-comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 4px 0 12px;
+  font-size: 13px;
+}
+
+.bs-comment-meta .bs-inline-btn {
+  color: #65676b;
+  font-weight: 500;
+}
+
+.bs-like-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  box-shadow: rgb(149 157 165 / 20%) 0px 4px 12px;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 13px;
+  color: #65676b;
+}
+
 .bs-image-preview {
   position: relative;
   margin-top: 12px;
