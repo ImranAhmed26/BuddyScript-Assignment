@@ -175,10 +175,11 @@ export default function RegisterPage() {
                       <div className="form-check _social_registration_form_check">
                         <input
                           className="form-check-input _social_registration_form_check_input"
-                          type="checkbox"
+                          type="radio"
                           id="agreeToTerms"
                           checked={agreedToTerms}
-                          onChange={(e) => setAgreedToTerms(e.target.checked)}
+                          onClick={() => setAgreedToTerms((prev) => !prev)}
+                          onChange={() => {}}
                           required
                         />
                         <label
