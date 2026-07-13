@@ -36,12 +36,13 @@ services:
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:5173}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set a strong random secret in .env}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set a strong random secret in .env}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?set your Google OAuth Client ID in .env}
       ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
       REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-7d}
       UPLOAD_DIR: uploads
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-5242880}
     ports:
-      - "${SERVER_PORT:-4000}:4000"
+      - "127.0.0.1:${SERVER_PORT:-4000}:4000"
     volumes:
       - uploads_data:/app/uploads
 

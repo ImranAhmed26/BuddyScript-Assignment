@@ -1,11 +1,13 @@
 // Rendered inside GuestRoute, which redirects already-authenticated users away.
-import { useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { getErrorMessage } from '../lib/apiClient';
+import { GoogleSignInButton } from '../components/GoogleSignInButton';
 
 export default function RegisterPage() {
   const register = useAuthStore((s) => s.register);
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const navigate = useNavigate();
 
   const [firstName, setFirstName] = useState('');
@@ -40,6 +42,19 @@ export default function RegisterPage() {
       setSubmitting(false);
     }
   };
+
+  const onGoogleCredential = useCallback(
+    async (idToken: string) => {
+      setError(null);
+      try {
+        await loginWithGoogle(idToken);
+        navigate('/feed', { replace: true });
+      } catch (err) {
+        setError(getErrorMessage(err, 'Unable to sign in with Google'));
+      }
+    },
+    [loginWithGoogle, navigate],
+  );
 
   return (
     <section className="_social_registration_wrapper _layout_main_wrapper">
@@ -157,6 +172,14 @@ export default function RegisterPage() {
                     </div>
                   </div>
                 </form>
+
+                <div className="row">
+                  <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
+                      <GoogleSignInButton onCredential={onGoogleCredential} />
+                    </div>
+                  </div>
+                </div>
 
                 <div className="row">
                   <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">

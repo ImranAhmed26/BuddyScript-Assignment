@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { asyncHandler } from '../../lib/http.js';
 import { validate } from '../../middleware/validate.js';
 import { requireAuth } from '../../middleware/auth.js';
-import { loginSchema, registerSchema } from './auth.schemas.js';
+import { googleLoginSchema, loginSchema, registerSchema } from './auth.schemas.js';
 import * as authController from './auth.controller.js';
 
 // Blunt brute-force / credential-stuffing attempts.
@@ -29,6 +29,12 @@ authRouter.post(
   authLimiter,
   validate({ body: loginSchema }),
   asyncHandler(authController.login),
+);
+authRouter.post(
+  '/google',
+  authLimiter,
+  validate({ body: googleLoginSchema }),
+  asyncHandler(authController.google),
 );
 // Refresh/logout rely on the httpOnly cookie, not requireAuth.
 authRouter.post('/refresh', asyncHandler(authController.refresh));

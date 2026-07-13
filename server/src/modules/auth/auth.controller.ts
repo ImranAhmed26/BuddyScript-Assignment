@@ -30,6 +30,12 @@ export async function login(req: Request, res: Response): Promise<void> {
   res.json({ user: toPublicUser(user), accessToken: tokens.accessToken });
 }
 
+export async function google(req: Request, res: Response): Promise<void> {
+  const { user, tokens } = await authService.loginWithGoogle(req.body.idToken);
+  res.cookie(REFRESH_COOKIE, tokens.refreshToken, refreshCookieOptions(tokens.refreshExpiresAt));
+  res.json({ user: toPublicUser(user), accessToken: tokens.accessToken });
+}
+
 // Rotates the refresh token; old one is revoked server-side (see auth.service).
 export async function refresh(req: Request, res: Response): Promise<void> {
   const raw = req.cookies?.[REFRESH_COOKIE];
