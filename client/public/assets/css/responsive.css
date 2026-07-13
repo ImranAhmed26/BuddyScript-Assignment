@@ -1,4 +1,21 @@
 
+/* Auth pages on phones: the illustration column has no mobile handling in the
+   original design and, at full column width, renders tall enough to push the
+   form below the fold. Hide it and let the form take the full width instead. */
+@media(max-width:767px) {
+    ._social_login_left,
+    ._social_registration_right {
+        display: none;
+    }
+    ._social_login_wrapper,
+    ._social_registration_wrapper {
+        padding: 40px 0;
+    }
+    ._social_login_content,
+    ._social_registration_content {
+        padding: 24px;
+    }
+}
 @media(max-width:355px) {
     ._feed_inner_timeline_reaction_link {
         font-size: 12px;

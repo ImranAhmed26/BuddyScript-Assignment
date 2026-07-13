@@ -15,6 +15,7 @@ export function Navbar() {
 
   const [term, setTerm] = useState('');
   const [menu, setMenu] = useState<Menu>(null);
+  const [navOpen, setNavOpen] = useState(false);
 
   // Debounce so we don't fire a request per keystroke.
   useEffect(() => {
@@ -36,7 +37,18 @@ export function Navbar() {
           </a>
         </div>
 
-        <div className="collapse navbar-collapse" id="navbarSupportedContent">
+        {/* No Bootstrap JS is loaded (CSS only), so the collapse toggle is done manually here. */}
+        <button
+          type="button"
+          className="navbar-toggler"
+          aria-label="Toggle navigation"
+          aria-expanded={navOpen}
+          onClick={() => setNavOpen((v) => !v)}
+        >
+          <span className="navbar-toggler-icon" />
+        </button>
+
+        <div className={`collapse navbar-collapse ${navOpen ? 'show' : ''}`} id="navbarSupportedContent">
           <div className="_header_form ms-auto">
             <form className="_header_form_grp" onSubmit={onSearchSubmit}>
               <svg className="_header_form_svg" xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 17 17">
