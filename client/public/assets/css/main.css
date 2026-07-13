@@ -506,7 +506,8 @@
     border-radius: 50%;
     background: var(--color5);
 }
-._social_registration_form_check_input:checked[type=radio] {
+._social_registration_form_check_input:checked[type=radio],
+._social_registration_form_check_input:checked[type=checkbox] {
     background-image: none;
 }
 ._social_registration_form_left_para {

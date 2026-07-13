@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -23,6 +24,10 @@ export default function RegisterPage() {
     setError(null);
 
     // Client-side only; server re-validates independently.
+    if (!agreedToTerms) {
+      setError('You must agree to the terms & conditions');
+      return;
+    }
     if (password !== repeatPassword) {
       setError('Passwords do not match');
       return;
@@ -161,6 +166,27 @@ export default function RegisterPage() {
                           required
                           autoComplete="new-password"
                         />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="row">
+                    <div className="col-lg-12 col-xl-12 col-md-12 col-sm-12">
+                      <div className="form-check _social_registration_form_check">
+                        <input
+                          className="form-check-input _social_registration_form_check_input"
+                          type="checkbox"
+                          id="agreeToTerms"
+                          checked={agreedToTerms}
+                          onChange={(e) => setAgreedToTerms(e.target.checked)}
+                          required
+                        />
+                        <label
+                          className="form-check-label _social_registration_form_check_label"
+                          htmlFor="agreeToTerms"
+                        >
+                          I agree to terms &amp; conditions
+                        </label>
                       </div>
                     </div>
                   </div>

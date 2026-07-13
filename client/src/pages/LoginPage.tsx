@@ -115,6 +115,28 @@ export default function LoginPage() {
                   {error && <p className="bs-error-text">{error}</p>}
 
                   <div className="row">
+                    <div className="col-lg-6 col-xl-6 col-md-6 col-sm-12">
+                      <div className="form-check _social_login_form_check">
+                        <input
+                          className="form-check-input _social_login_form_check_input"
+                          type="radio"
+                          name="rememberMe"
+                          id="rememberMe"
+                          defaultChecked
+                        />
+                        <label className="form-check-label _social_login_form_check_label" htmlFor="rememberMe">
+                          Remember me
+                        </label>
+                      </div>
+                    </div>
+                    <div className="col-lg-6 col-xl-6 col-md-6 col-sm-12">
+                      <div className="_social_login_form_left">
+                        <p className="_social_login_form_left_para">Forgot password?</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="row">
                     <div className="col-lg-12 col-md-12 col-xl-12 col-sm-12">
                       <div className="_social_login_form_btn _mar_t40 _mar_b60">
                         <button
