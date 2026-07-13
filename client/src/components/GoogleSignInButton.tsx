@@ -38,26 +38,31 @@ function loadGoogleScript(): Promise<void> {
 
 interface GoogleSignInButtonProps {
   onCredential: (idToken: string) => void;
+  className: string;
+  label: string;
 }
 
-// Renders Google's own button and hands the resulting ID token back to the caller.
-export function GoogleSignInButton({ onCredential }: GoogleSignInButtonProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+/**
+ * Matches the mockup's own button design instead of Google's stock widget:
+ * Google's real button is rendered off-screen, and our styled button
+ * forwards its click to it — Google still owns the popup/credential flow.
+ */
+export function GoogleSignInButton({ onCredential, className, label }: GoogleSignInButtonProps) {
+  const hiddenButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;
     let cancelled = false;
 
     loadGoogleScript().then(() => {
-      if (cancelled || !containerRef.current || !window.google) return;
+      if (cancelled || !hiddenButtonRef.current || !window.google) return;
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response) => onCredential(response.credential),
       });
-      window.google.accounts.id.renderButton(containerRef.current, {
+      window.google.accounts.id.renderButton(hiddenButtonRef.current, {
         theme: 'outline',
         size: 'large',
-        width: 320,
       });
     });
 
@@ -66,6 +71,22 @@ export function GoogleSignInButton({ onCredential }: GoogleSignInButtonProps) {
     };
   }, [onCredential]);
 
+  const triggerSignIn = () => {
+    hiddenButtonRef.current?.querySelector<HTMLElement>('div[role="button"]')?.click();
+  };
+
   if (!GOOGLE_CLIENT_ID) return null;
-  return <div ref={containerRef} />;
+
+  return (
+    <>
+      <button type="button" className={className} onClick={triggerSignIn}>
+        <img src="/assets/images/google.svg" alt="" className="_google_img" />
+        <span>{label}</span>
+      </button>
+      <div
+        ref={hiddenButtonRef}
+        style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}
+      />
+    </>
+  );
 }

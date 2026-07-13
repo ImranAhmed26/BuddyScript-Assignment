@@ -73,6 +73,15 @@ export default function LoginPage() {
                   Login to your account
                 </h4>
 
+                <GoogleSignInButton
+                  onCredential={onGoogleCredential}
+                  className="_social_login_content_btn _mar_b40"
+                  label="Or sign-in with google"
+                />
+                <div className="_social_login_content_bottom_txt _mar_b40">
+                  <span>Or</span>
+                </div>
+
                 <form className="_social_login_form" onSubmit={onSubmit}>
                   <div className="row">
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
@@ -119,14 +128,6 @@ export default function LoginPage() {
                     </div>
                   </div>
                 </form>
-
-                <div className="row">
-                  <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
-                    <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-                      <GoogleSignInButton onCredential={onGoogleCredential} />
-                    </div>
-                  </div>
-                </div>
 
                 <div className="row">
                   <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
