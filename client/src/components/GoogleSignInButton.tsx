@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GOOGLE_CLIENT_ID } from '../lib/config';
 
 declare global {
@@ -44,49 +44,62 @@ interface GoogleSignInButtonProps {
 
 /**
  * Matches the mockup's own button design instead of Google's stock widget:
- * Google's real button is rendered off-screen, and our styled button
- * forwards its click to it — Google still owns the popup/credential flow.
+ * Google's real button (an iframe) is rendered invisibly but stacked exactly
+ * on top of our styled button, so a genuine click lands on the real iframe —
+ * a synthetic .click() can't reach cross-origin iframe content.
  */
 export function GoogleSignInButton({ onCredential, className, label }: GoogleSignInButtonProps) {
-  const hiddenButtonRef = useRef<HTMLDivElement>(null);
+  const visibleButtonRef = useRef<HTMLButtonElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (visibleButtonRef.current) {
+      setWidth(Math.round(visibleButtonRef.current.getBoundingClientRect().width));
+    }
+  }, []);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) return;
+    if (!GOOGLE_CLIENT_ID || width === null) return;
     let cancelled = false;
 
     loadGoogleScript().then(() => {
-      if (cancelled || !hiddenButtonRef.current || !window.google) return;
+      if (cancelled || !overlayRef.current || !window.google) return;
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: (response) => onCredential(response.credential),
       });
-      window.google.accounts.id.renderButton(hiddenButtonRef.current, {
+      overlayRef.current.innerHTML = '';
+      window.google.accounts.id.renderButton(overlayRef.current, {
         theme: 'outline',
         size: 'large',
+        width,
       });
     });
 
     return () => {
       cancelled = true;
     };
-  }, [onCredential]);
-
-  const triggerSignIn = () => {
-    hiddenButtonRef.current?.querySelector<HTMLElement>('div[role="button"]')?.click();
-  };
+  }, [onCredential, width]);
 
   if (!GOOGLE_CLIENT_ID) return null;
 
   return (
-    <>
-      <button type="button" className={className} onClick={triggerSignIn}>
+    <div style={{ position: 'relative', width: '100%' }}>
+      <button
+        ref={visibleButtonRef}
+        type="button"
+        className={className}
+        tabIndex={-1}
+        style={{ width: '100%', pointerEvents: 'none' }}
+      >
         <img src="/assets/images/google.svg" alt="" className="_google_img" />
         <span>{label}</span>
       </button>
       <div
-        ref={hiddenButtonRef}
-        style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}
+        ref={overlayRef}
+        style={{ position: 'absolute', inset: 0, opacity: 0, overflow: 'hidden' }}
       />
-    </>
+    </div>
   );
 }
