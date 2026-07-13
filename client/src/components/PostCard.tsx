@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Post, Visibility } from '../lib/types';
 import { fullName, timeAgo } from '../lib/format';
 import { resolveUpload } from '../lib/config';
@@ -8,20 +8,42 @@ import { useAuthStore } from '../store/authStore';
 import { Avatar } from './Avatar';
 import { LikersModal } from './LikersModal';
 import { CommentThread } from './CommentThread';
+import { REACTIONS, reactionEmoji, reactionLabel, type ReactionKey } from '../lib/reactions';
+import { useHoverIntent } from '../lib/useHoverIntent';
 
+// Static faces for the reaction pill — decorative, not tied to actual reactions used.
 const REACTION_IMAGES = ['react_img1', 'react_img2', 'react_img3'];
 
+/** A single feed post: header, content, reactions, comments, edit/delete/share. */
 export function PostCard({ post }: { post: Post }) {
   const user = useAuthStore((s) => s.user);
   const toggleLike = useTogglePostLike();
   const deletePost = useDeletePost();
   const updatePost = useUpdatePost();
 
-  const [showComments, setShowComments] = useState(false);
+  // Lets "Comment" actions scroll the comment section into view.
+  const commentSectionRef = useRef<HTMLDivElement>(null);
   const [showLikers, setShowLikers] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // "Hide" is local-only (no backend call); resets on reload.
   const [hidden, setHidden] = useState(false);
   const [copied, setCopied] = useState(false);
+  const picker = useHoverIntent();
+  // Reaction type is client-side only — the API just stores a boolean like.
+  const [reaction, setReaction] = useState<ReactionKey | null>(post.likedByMe ? 'like' : null);
+
+  const pickReaction = (key: ReactionKey) => {
+    picker.hide();
+    setReaction(key);
+    // Don't double-toggle the like mutation if already liked.
+    if (!post.likedByMe) toggleLike.mutate(post);
+  };
+
+  const toggleDefaultLike = () => {
+    // Optimistic local flip; mutation reconciles with the server.
+    setReaction(post.likedByMe ? null : 'like');
+    toggleLike.mutate(post);
+  };
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(post.content);
@@ -40,6 +62,7 @@ export function PostCard({ post }: { post: Post }) {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/feed#post-${post.id}`);
       setCopied(true);
+      // Revert "Link copied" back to "Share" after a couple seconds.
       setTimeout(() => setCopied(false), 2000);
     } catch {
       /* clipboard unavailable — ignore */
@@ -59,6 +82,7 @@ export function PostCard({ post }: { post: Post }) {
   };
 
   return (
+    // Anchor id lets copyLink's URL (`/feed#post-{id}`) jump to this card.
     <div id={`post-${post.id}`} className="_feed_inner_timeline_post_area _b_radious6 _padd_b24 _padd_t24 _mar_b16">
       <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
         <div className="_feed_inner_timeline_post_top">
@@ -189,26 +213,51 @@ export function PostCard({ post }: { post: Post }) {
           )}
         </div>
         <div className="_feed_inner_timeline_total_reacts_txt">
-          <button type="button" className="bs-inline-btn" style={{ fontSize: 14 }} onClick={() => setShowComments((v) => !v)}>
+          {/* Scrolls to the embedded comment thread. */}
+          <button
+            type="button"
+            className="bs-inline-btn"
+            style={{ fontSize: 14 }}
+            onClick={() => commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+          >
             <span>{post.commentCount}</span> Comment{post.commentCount === 1 ? '' : 's'}
           </button>
         </div>
       </div>
 
       <div className="_feed_inner_timeline_reaction">
-        <button
-          type="button"
-          className={`_feed_inner_timeline_reaction_emoji _feed_reaction ${post.likedByMe ? '_feed_reaction_active' : ''}`}
-          onClick={() => toggleLike.mutate(post)}
+        <div
+          className="bs-reaction-picker-wrap"
+          style={{ flex: '1 1', display: 'flex' }}
+          onMouseEnter={picker.show}
+          onMouseLeave={picker.scheduleHide}
         >
-          <span className="_feed_inner_timeline_reaction_link">
-            <span className={post.likedByMe ? 'bs-reaction-active' : ''}>👍 {post.likedByMe ? 'Liked' : 'Like'}</span>
-          </span>
-        </button>
+          <button
+            type="button"
+            className={`_feed_inner_timeline_reaction_emoji _feed_reaction ${post.likedByMe ? '_feed_reaction_active' : ''}`}
+            style={{ margin: 0, width: '100%' }}
+            onClick={toggleDefaultLike}
+          >
+            <span className="_feed_inner_timeline_reaction_link">
+              <span className={post.likedByMe ? 'bs-reaction-active' : ''}>
+                {reactionEmoji(post.likedByMe ? reaction : null)} {post.likedByMe ? reactionLabel(reaction) : 'Like'}
+              </span>
+            </span>
+          </button>
+          {picker.open && (
+            <div className="bs-reaction-picker">
+              {REACTIONS.map((r) => (
+                <button key={r.key} type="button" title={r.label} onClick={() => pickReaction(r.key)}>
+                  {r.emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           type="button"
           className="_feed_inner_timeline_reaction_comment _feed_reaction"
-          onClick={() => setShowComments((v) => !v)}
+          onClick={() => commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
         >
           <span className="_feed_inner_timeline_reaction_link"><span>💬 Comment</span></span>
         </button>
@@ -217,7 +266,9 @@ export function PostCard({ post }: { post: Post }) {
         </button>
       </div>
 
-      {showComments && <CommentThread postId={post.id} />}
+      <div ref={commentSectionRef}>
+        <CommentThread postId={post.id} />
+      </div>
 
       {showLikers && (
         <LikersModal

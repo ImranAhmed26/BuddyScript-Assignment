@@ -1,9 +1,6 @@
-/**
- * Decorative left sidebar from the Buddy Script design (Explore menu +
- * Suggested People). Static presentational content — there is no backing API
- * for these panels in the feed MVP.
- */
+// Decorative left sidebar (Explore + Suggested People); no backing API in the MVP.
 
+// Hardcoded, non-functional; links are `href="#0"` for layout parity only.
 const EXPLORE = [
   { label: 'Learning', badge: 'New' },
   { label: 'Insights' },

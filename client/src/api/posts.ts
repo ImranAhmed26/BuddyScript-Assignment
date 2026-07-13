@@ -1,3 +1,4 @@
+// Post query hooks: feed pagination, CRUD, and optimistic like/unlike (see useTogglePostLike).
 import {
   useInfiniteQuery,
   useMutation,
@@ -68,7 +69,6 @@ export function useUpdatePost() {
       });
       return data;
     },
-    // Splice the server's authoritative post back into every feed cache.
     onSuccess: (post) => {
       qc.setQueriesData<FeedData>({ queryKey: queryKeys.feed }, (data) =>
         patchPostInFeed(data, post.id, () => post),
@@ -88,6 +88,7 @@ export function useDeletePost() {
   });
 }
 
+// Optimistic like/unlike: flips cache immediately, rolls back on error, reconciles with server counts on success.
 export function useTogglePostLike() {
   const qc = useQueryClient();
   return useMutation({
@@ -97,8 +98,8 @@ export function useTogglePostLike() {
         : await api.post<LikeResult>(`/posts/${post.id}/like`);
       return { postId: post.id, result: data };
     },
-    // Optimistic toggle across every feed cache (search + unfiltered).
     onMutate: async (post) => {
+      // Cancel in-flight refetches so they can't overwrite the optimistic write.
       await qc.cancelQueries({ queryKey: queryKeys.feed });
       const previous = qc.getQueriesData<FeedData>({ queryKey: queryKeys.feed });
       qc.setQueriesData<FeedData>({ queryKey: queryKeys.feed }, (data) =>
@@ -113,7 +114,6 @@ export function useTogglePostLike() {
     onError: (_err, _post, ctx) => {
       ctx?.previous?.forEach(([key, data]) => qc.setQueryData(key, data));
     },
-    // Reconcile with the authoritative server counts.
     onSuccess: ({ postId, result }) => {
       qc.setQueriesData<FeedData>({ queryKey: queryKeys.feed }, (data) =>
         patchPostInFeed(data, postId, (p) => ({ ...p, ...result })),

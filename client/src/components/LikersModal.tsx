@@ -21,7 +21,7 @@ export function LikersModal({
   onLoadMore,
   onClose,
 }: LikersModalProps) {
-  // Close on Escape.
+  // Close on Escape for keyboard accessibility.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -32,6 +32,7 @@ export function LikersModal({
 
   return (
     <div className="bs-modal-backdrop" onClick={onClose}>
+      {/* Stop propagation so inner clicks don't bubble to the backdrop's onClose. */}
       <div className="bs-modal" onClick={(e) => e.stopPropagation()}>
         <div className="bs-modal-header">
           <h4 className="_comment_name_title" style={{ margin: 0 }}>

@@ -8,7 +8,7 @@ interface AvatarProps {
   className?: string;
 }
 
-/** Round avatar that falls back to the user's initials when no image is set. */
+/** Round avatar, falls back to initials when no image is set; size is explicit since it's reused across many contexts. */
 export function Avatar({ user, size = 40, className }: AvatarProps) {
   const dimension = { width: size, height: size };
   const src = resolveUpload(user.avatarUrl);

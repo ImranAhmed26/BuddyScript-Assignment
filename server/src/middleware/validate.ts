@@ -8,11 +8,7 @@ interface Schemas {
   params?: ZodTypeAny;
 }
 
-/**
- * Validates and coerces request parts against Zod schemas.
- * Parsed `body`/`params` replace the originals; parsed `query` is placed on
- * `res.locals.query` (Express `req.query` is read-only in v5-style setups).
- */
+/** Parsed query goes on `res.locals.query` since `req.query` is read-only in v5-style setups. */
 export const validate =
   (schemas: Schemas) => (req: Request, res: Response, next: NextFunction) => {
     try {

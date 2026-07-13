@@ -1,3 +1,4 @@
+// likeCount/commentCount are denormalized counters, updated in transactions so reads avoid a COUNT.
 import { Prisma, type Visibility } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../lib/http.js';
@@ -56,6 +57,8 @@ const visibilityWhere = (viewerId: string): Prisma.PostWhereInput => ({
   OR: [{ visibility: 'PUBLIC' }, { authorId: viewerId }],
 });
 
+// Public posts plus the viewer's own private ones; cursor-paginated, ordered
+// by (createdAt, id) for a stable cursor.
 export async function listFeed(
   viewerId: string,
   { cursor, limit, q }: Pagination & { q?: string },
@@ -94,6 +97,7 @@ export async function getPost(viewerId: string, postId: string): Promise<PostDTO
   return serialize(post, liked.has(post.id));
 }
 
+// Enforced here, not in Zod, since the image arrives via multipart upload.
 export async function createPost(
   authorId: string,
   data: { content: string; imageUrl: string | null; visibility: Visibility },
@@ -108,6 +112,7 @@ export async function createPost(
   return serialize(post, false);
 }
 
+// Used by update/delete to enforce "you can only edit/remove your own posts".
 async function loadOwnedPost(userId: string, postId: string) {
   const post = await prisma.post.findUnique({ where: { id: postId } });
   if (!post) throw new ApiError(404, 'Post not found');
@@ -135,6 +140,7 @@ export async function deletePost(userId: string, postId: string): Promise<void> 
   await prisma.post.delete({ where: { id: postId } }); // cascades to comments + likes
 }
 
+// Swallows Prisma's P2002 (duplicate like) to make liking idempotent.
 export async function likePost(userId: string, postId: string): Promise<{ likeCount: number }> {
   await loadVisiblePost(userId, postId);
   try {
@@ -143,13 +149,13 @@ export async function likePost(userId: string, postId: string): Promise<{ likeCo
       prisma.post.update({ where: { id: postId }, data: { likeCount: { increment: 1 } } }),
     ]);
   } catch (err) {
-    // Already liked — idempotent, leave the count untouched.
     if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')) throw err;
   }
   const post = await prisma.post.findUniqueOrThrow({ where: { id: postId }, select: { likeCount: true } });
   return { likeCount: post.likeCount };
 }
 
+// Only decrements when deleteMany actually removed a row, avoiding negative counts.
 export async function unlikePost(userId: string, postId: string): Promise<{ likeCount: number }> {
   await loadVisiblePost(userId, postId);
   await prisma.$transaction(async (tx) => {

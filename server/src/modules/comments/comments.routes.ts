@@ -1,3 +1,4 @@
+// Route definitions for comment/reply/like endpoints.
 import { Router } from 'express';
 import { asyncHandler } from '../../lib/http.js';
 import { requireAuth } from '../../middleware/auth.js';
@@ -11,11 +12,9 @@ import {
 } from './comments.schemas.js';
 import * as commentsController from './comments.controller.js';
 
-// Mounted at /api. Protected across the board.
 export const commentsRouter = Router();
 commentsRouter.use(requireAuth);
 
-// Top-level comments of a post.
 commentsRouter.get(
   '/posts/:postId/comments',
   validate({ params: postIdParams, query: paginationSchema }),
@@ -27,7 +26,6 @@ commentsRouter.post(
   asyncHandler(commentsController.createForPost),
 );
 
-// Replies to a comment.
 commentsRouter.get(
   '/comments/:id/replies',
   validate({ params: commentIdParams, query: paginationSchema }),
@@ -39,7 +37,6 @@ commentsRouter.post(
   asyncHandler(commentsController.createReply),
 );
 
-// Edit / delete a comment or reply.
 commentsRouter.patch(
   '/comments/:id',
   validate({ params: commentIdParams, body: updateCommentSchema }),
@@ -51,7 +48,6 @@ commentsRouter.delete(
   asyncHandler(commentsController.remove),
 );
 
-// Like / unlike + who-liked.
 commentsRouter.post(
   '/comments/:id/like',
   validate({ params: commentIdParams }),

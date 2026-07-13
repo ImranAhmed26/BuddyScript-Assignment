@@ -1,3 +1,4 @@
+// Route definitions for /api/posts — feed, CRUD, and like endpoints.
 import { Router } from 'express';
 import { asyncHandler } from '../../lib/http.js';
 import { requireAuth } from '../../middleware/auth.js';
@@ -9,14 +10,13 @@ import * as postsController from './posts.controller.js';
 
 export const postsRouter = Router();
 
-// Every feed route is protected.
 postsRouter.use(requireAuth);
 
 postsRouter.get('/', validate({ query: feedQuerySchema }), asyncHandler(postsController.list));
 
 postsRouter.post(
   '/',
-  uploadImage, // parses multipart + optional `image` file
+  uploadImage,
   validate({ body: createPostSchema }),
   asyncHandler(postsController.create),
 );

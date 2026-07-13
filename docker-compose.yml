@@ -1,0 +1,50 @@
+# Backend + database stack. Bring it up on a VPS with:
+#   cp .env.example .env   # fill in real secrets first
+#   docker compose up -d --build
+#
+# The client is a static SPA and is not part of this stack — build it with
+# `npm run build` in client/ and serve client/dist from any static host or
+# reverse proxy (e.g. nginx), pointed at this API.
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-buddyscript}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-buddyscript}
+      POSTGRES_DB: ${POSTGRES_DB:-buddyscript}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-buddyscript}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-buddyscript}:${POSTGRES_PASSWORD:-buddyscript}@db:5432/${POSTGRES_DB:-buddyscript}?schema=public
+      PORT: 4000
+      NODE_ENV: production
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:5173}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set a strong random secret in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set a strong random secret in .env}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-7d}
+      UPLOAD_DIR: uploads
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-5242880}
+    ports:
+      - "${SERVER_PORT:-4000}:4000"
+    volumes:
+      - uploads_data:/app/uploads
+
+volumes:
+  db_data:
+  uploads_data:

@@ -9,28 +9,30 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { postsRouter } from './modules/posts/posts.routes.js';
 import { commentsRouter } from './modules/comments/comments.routes.js';
 
+// Factory (not a top-level app) so tests can build isolated instances.
 export function createApp() {
   const app = express();
 
   // Behind a proxy (Render/Railway) so secure cookies + rate-limit see real IPs.
   app.set('trust proxy', 1);
 
+  // Helmet's CORP default would block the cross-origin SPA from loading /uploads images.
   app.use(
     helmet({
-      // Uploaded images are served here but embedded by the client on another origin.
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
+  // Single known origin (not wildcard) required for credentials: true (refresh cookie).
   app.use(
     cors({
       origin: env.CLIENT_ORIGIN,
-      credentials: true, // allow the refresh cookie
+      credentials: true,
     }),
   );
+  // 1mb cap: posts are text only; images go through a separate multipart route.
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 
-  // Static hosting for locally-stored uploads.
   app.use('/uploads', express.static(path.resolve(process.cwd(), env.UPLOAD_DIR)));
 
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
@@ -38,6 +40,7 @@ export function createApp() {
   app.use('/api/posts', postsRouter);
   app.use('/api', commentsRouter);
 
+  // Must be last: order matters for Express error/404 handling.
   app.use(notFound);
   app.use(errorHandler);
 

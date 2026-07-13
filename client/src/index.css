@@ -5,6 +5,12 @@ body {
   font-family: 'Poppins', sans-serif;
 }
 
+/* The design's comment bubble shrink-wraps to its text (max-width: fit-content),
+   leaving short comments looking cramped. Let it use the full available width. */
+._comment_details {
+  max-width: 100%;
+}
+
 .bs-center-screen {
   min-height: 100vh;
   display: flex;
@@ -113,14 +119,6 @@ body {
   font-size: 13px;
 }
 
-.bs-composer-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-
 .bs-reaction-active {
   color: #377dff !important;
   font-weight: 600;
@@ -151,6 +149,49 @@ body {
   padding: 2px 8px;
   font-size: 13px;
   color: #65676b;
+}
+
+.bs-reaction-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bs-reaction-picker-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.bs-reaction-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  display: flex;
+  gap: 4px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: rgb(149 157 165 / 30%) 0px 4px 14px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  z-index: 5;
+}
+
+.bs-reaction-picker button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 2px;
+  transition: transform 0.12s ease;
+}
+
+.bs-reaction-picker button:hover {
+  transform: scale(1.3);
+}
+
+._dark_wrapper .bs-reaction-picker {
+  background: var(--bg6);
 }
 
 /* Icon-only buttons (nav icons, post ⋮ menu) — strip default button chrome. */

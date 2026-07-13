@@ -8,9 +8,9 @@ const server = app.listen(env.PORT, () => {
   console.log(`🚀 API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
 });
 
-// Graceful shutdown so Prisma connections close cleanly.
 async function shutdown(signal: string) {
   console.log(`\n${signal} received, shutting down...`);
+  // Stop new connections, let in-flight requests finish, then disconnect Prisma.
   server.close(async () => {
     await prisma.$disconnect();
     process.exit(0);

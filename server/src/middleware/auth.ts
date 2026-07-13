@@ -1,3 +1,4 @@
+// Auth middleware: gates routes behind a valid Bearer access token.
 import type { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../lib/http.js';
 import { verifyAccessToken } from '../lib/jwt.js';
@@ -20,6 +21,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
     return next(new ApiError(401, 'Authentication required'));
   }
   try {
+    // Any failure (bad signature, expired, malformed) is treated the same — reason isn't leaked.
     req.userId = verifyAccessToken(token).sub;
     next();
   } catch {

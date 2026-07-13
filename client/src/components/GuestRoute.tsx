@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
+/** Route guard for logged-out-only pages; bounces authenticated users to /feed. */
 export function GuestRoute() {
   const status = useAuthStore((s) => s.status);
 

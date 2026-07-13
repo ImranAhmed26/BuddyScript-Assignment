@@ -1,3 +1,4 @@
+// Business logic for auth: registration, login, refresh-token lifecycle.
 import type { User } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../lib/http.js';
@@ -22,6 +23,7 @@ async function issueTokens(userId: string): Promise<IssuedTokens> {
   const refreshToken = generateRefreshToken();
   const refreshExpiresAt = new Date(Date.now() + parseDuration(env.REFRESH_TOKEN_TTL));
 
+  // Only the hash is persisted, so a DB leak alone can't be replayed as a session.
   await prisma.refreshToken.create({
     data: {
       userId,
@@ -55,7 +57,7 @@ export async function register(
 
 export async function login(input: LoginInput): Promise<{ user: User; tokens: IssuedTokens }> {
   const user = await prisma.user.findUnique({ where: { email: input.email } });
-  // Verify against a real or dummy hash either way to reduce timing/user-enumeration signal.
+  // Always verify against a hash to reduce timing/user-enumeration signal.
   const ok = user
     ? await verifyPassword(input.password, user.passwordHash)
     : await verifyPassword(input.password, '$2a$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinva');
@@ -75,7 +77,6 @@ export async function rotateRefreshToken(rawToken: string): Promise<IssuedTokens
     throw new ApiError(401, 'Invalid or expired session');
   }
 
-  // Rotate: revoke the presented token, then issue a new pair.
   await prisma.refreshToken.update({
     where: { id: record.id },
     data: { revokedAt: new Date() },
@@ -84,6 +85,7 @@ export async function rotateRefreshToken(rawToken: string): Promise<IssuedTokens
   return issueTokens(record.userId);
 }
 
+// updateMany so a missing/already-revoked token no-ops instead of throwing.
 export async function revokeRefreshToken(rawToken: string): Promise<void> {
   await prisma.refreshToken.updateMany({
     where: { tokenHash: hashRefreshToken(rawToken), revokedAt: null },
@@ -91,6 +93,7 @@ export async function revokeRefreshToken(rawToken: string): Promise<void> {
   });
 }
 
+// 404s if not found, e.g. account deleted after the access token was issued.
 export async function getUserById(userId: string): Promise<User> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new ApiError(404, 'User not found');

@@ -1,7 +1,5 @@
-/**
- * Decorative "stories" strip from the design. There is no stories feature in
- * the MVP backend, so this is static chrome to match the reference layout.
- */
+// Decorative "stories" strip; no stories feature in the MVP backend.
+// Fixed set of story cards for layout parity only — clicking does nothing.
 const PUBLIC_STORIES = [
   { img: '/assets/images/card_ppl2.png', name: 'Ryan Roslansky' },
   { img: '/assets/images/card_ppl3.png', name: 'Dylan Field' },

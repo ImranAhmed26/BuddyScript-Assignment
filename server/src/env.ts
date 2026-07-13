@@ -1,6 +1,8 @@
+// Validates process.env once at startup so the rest of the app can trust `env.*`.
 import 'dotenv/config';
 import { z } from 'zod';
 
+// Defaults are for local dev; secrets are still required.
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(4000),
@@ -14,6 +16,7 @@ const schema = z.object({
   MAX_UPLOAD_BYTES: z.coerce.number().default(5 * 1024 * 1024),
 });
 
+// safeParse so we can log a field-by-field report instead of an unstructured throw.
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) {
   console.error('❌ Invalid environment configuration:', parsed.error.flatten().fieldErrors);

@@ -1,3 +1,4 @@
+// Shapes/functions for turning Prisma models into API-safe response bodies.
 import type { User } from '@prisma/client';
 
 export interface PublicUser {

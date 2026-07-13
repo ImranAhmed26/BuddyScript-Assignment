@@ -1,3 +1,4 @@
+// No zustand persist middleware: access token stays in-memory only (XSS mitigation); session survives via httpOnly refresh cookie.
 import { create } from 'zustand';
 import { api, refreshAccessToken, setAccessToken, setAuthFailureHandler } from '../lib/apiClient';
 import type { User } from '../lib/types';
@@ -32,13 +33,13 @@ export const useAuthStore = create<AuthState>((set) => {
     set({ user: null, status: 'unauthenticated' });
   };
 
-  // If a request can't be refreshed, the axios layer drops us back to login.
   setAuthFailureHandler(clear);
 
   return {
     user: null,
     status: 'loading',
 
+    // Trades the refresh cookie for a new access token, then confirms the session is valid.
     bootstrap: async () => {
       const token = await refreshAccessToken();
       if (!token) {

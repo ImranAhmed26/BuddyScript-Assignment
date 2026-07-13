@@ -1,3 +1,4 @@
+// Zod request-validation schemas for the auth module (register/login bodies).
 import { z } from 'zod';
 
 const password = z
@@ -14,6 +15,7 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('A valid email is required'),
+  // No complexity check — login must accept whatever the user already set.
   password: z.string().min(1, 'Password is required'),
 });
 

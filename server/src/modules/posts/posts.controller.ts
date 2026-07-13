@@ -1,3 +1,4 @@
+// HTTP layer for posts; req.userId is threaded through as viewer/actor.
 import type { Request, Response } from 'express';
 import type { Pagination } from '../../lib/pagination.js';
 import { uploadPublicPath } from '../../lib/upload.js';
@@ -13,6 +14,7 @@ export async function get(req: Request, res: Response): Promise<void> {
   res.json(await postsService.getPost(req.userId!, req.params.id));
 }
 
+// Image (if any) was already written to disk by the uploadImage middleware.
 export async function create(req: Request, res: Response): Promise<void> {
   const imageUrl = req.file ? uploadPublicPath(req.file.filename) : null;
   const post = await postsService.createPost(req.userId!, {
@@ -27,6 +29,7 @@ export async function update(req: Request, res: Response): Promise<void> {
   res.json(await postsService.updatePost(req.userId!, req.params.id, req.body));
 }
 
+// Comments/likes cascade — see posts.service.
 export async function remove(req: Request, res: Response): Promise<void> {
   await postsService.deletePost(req.userId!, req.params.id);
   res.status(204).end();

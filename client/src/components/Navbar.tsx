@@ -4,8 +4,10 @@ import { useUiStore } from '../store/uiStore';
 import { fullName } from '../lib/format';
 import { Avatar } from './Avatar';
 
+// Only one dropdown can be open at a time.
 type Menu = 'notify' | 'profile' | null;
 
+/** Top nav: search, dropdowns, account menu. Friend requests/messages are static mockup icons. */
 export function Navbar() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -14,7 +16,7 @@ export function Navbar() {
   const [term, setTerm] = useState('');
   const [menu, setMenu] = useState<Menu>(null);
 
-  // Debounce the search box so we don't fire a request per keystroke.
+  // Debounce so we don't fire a request per keystroke.
   useEffect(() => {
     const id = setTimeout(() => setSearch(term), 300);
     return () => clearTimeout(id);
@@ -34,7 +36,7 @@ export function Navbar() {
           </a>
         </div>
 
-        <div className="collapse navbar-collapse show" id="navbarSupportedContent">
+        <div className="collapse navbar-collapse" id="navbarSupportedContent">
           <div className="_header_form ms-auto">
             <form className="_header_form_grp" onSubmit={onSearchSubmit}>
               <svg className="_header_form_svg" xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 17 17">
@@ -61,6 +63,7 @@ export function Navbar() {
                 </svg>
               </a>
             </li>
+            {/* Friend requests: static icon, not part of the MVP. */}
             <li className="nav-item _header_nav_item">
               <span className="nav-link _header_nav_link" title="Friend requests (coming soon)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="26" height="20" fill="none" viewBox="0 0 26 20">
@@ -80,6 +83,7 @@ export function Navbar() {
                     <path fill="#000" fillOpacity=".6" fillRule="evenodd" d="M7.547 19.55c.533.59 1.218.915 1.93.915.714 0 1.403-.324 1.938-.916a.777.777 0 011.09-.056c.318.284.344.77.058 1.084-.832.917-1.927 1.423-3.086 1.423h-.002c-1.155-.001-2.248-.506-3.077-1.424a.762.762 0 01.057-1.083.774.774 0 011.092.057zM9.527 0c4.58 0 7.657 3.543 7.657 6.85 0 1.702.436 2.424.899 3.19.457.754.976 1.612.976 3.233-.36 4.14-4.713 4.478-9.531 4.478-4.818 0-9.172-.337-9.528-4.413-.003-1.686.515-2.544.973-3.299l.161-.27c.398-.679.737-1.417.737-2.918C1.871 3.543 4.948 0 9.528 0z" clipRule="evenodd" />
                   </svg>
                 </button>
+                {/* Not implemented server-side; always shows a static "all caught up" message. */}
                 <div className={`_notification_dropdown ${menu === 'notify' ? 'show' : ''}`} style={{ height: 'auto', maxHeight: 'min(70vh, 420px)' }}>
                   <div className="_notifications_content">
                     <h4 className="_notifications_content_title">Notifications</h4>
@@ -90,6 +94,7 @@ export function Navbar() {
                 </div>
               </span>
             </li>
+            {/* Messages: static icon, chat isn't implemented. */}
             <li className="nav-item _header_nav_item">
               <span className="nav-link _header_nav_link" title="Messages (coming soon)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="23" height="22" fill="none" viewBox="0 0 23 22">
@@ -103,10 +108,16 @@ export function Navbar() {
             {user && (
               <>
                 <div className="_header_nav_profile_image">
-                  <Avatar user={user} size={40} />
+                  <Avatar user={user} size={24} />
                 </div>
                 <div className="_header_nav_dropdown">
-                  <p className="_header_nav_para" style={{ margin: 0 }}>{fullName(user)}</p>
+                  <p
+                    className="_header_nav_para bs-clickable"
+                    style={{ margin: 0 }}
+                    onClick={() => setMenu((m) => (m === 'profile' ? null : 'profile'))}
+                  >
+                    {fullName(user)}
+                  </p>
                   <button
                     type="button"
                     className="_header_nav_dropdown_btn"
@@ -126,11 +137,49 @@ export function Navbar() {
                     </div>
                     <div className="_nav_profile_dropdown_info_txt">
                       <h4 className="_nav_dropdown_title" style={{ margin: 0 }}>{fullName(user)}</h4>
-                      <span className="bs-muted">{user.email}</span>
+                      <span className="bs-muted">View Profile</span>
                     </div>
                   </div>
                   <hr />
                   <ul className="_nav_dropdown_list">
+                    <li className="_nav_dropdown_list_item">
+                      <button
+                        type="button"
+                        // Settings: no onClick, out of scope for the MVP.
+                        className="_nav_dropdown_link bs-inline-btn"
+                        style={{ width: '100%' }}
+                        title="Settings (coming soon)"
+                      >
+                        <div className="_nav_drop_info">
+                          <span style={{ marginRight: 10 }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="none" viewBox="0 0 24 24" stroke="#377DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="3" />
+                              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                            </svg>
+                          </span>
+                          Settings
+                        </div>
+                      </button>
+                    </li>
+                    <li className="_nav_dropdown_list_item">
+                      <button
+                        type="button"
+                        className="_nav_dropdown_link bs-inline-btn"
+                        style={{ width: '100%' }}
+                        title="Help & Support (coming soon)"
+                      >
+                        <div className="_nav_drop_info">
+                          <span style={{ marginRight: 10 }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="none" viewBox="0 0 24 24" stroke="#377DFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                          </span>
+                          Help &amp; Support
+                        </div>
+                      </button>
+                    </li>
                     <li className="_nav_dropdown_list_item">
                       <button
                         type="button"
@@ -156,6 +205,7 @@ export function Navbar() {
         </div>
       </div>
 
+      {/* Backdrop that closes whichever dropdown is open on outside click. */}
       {menu && <div className="bs-dropdown-backdrop" onClick={() => setMenu(null)} />}
     </nav>
   );

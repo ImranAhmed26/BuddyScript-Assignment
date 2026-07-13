@@ -1,3 +1,4 @@
+// Multer configuration for local-disk image uploads (avatars, post images).
 import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -18,7 +19,7 @@ const EXT: Record<string, string> = {
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadRoot),
-  // Random filename — never trust client-provided names (path traversal / overwrite).
+  // Random filename — never trust client-provided names (path traversal risk).
   filename: (_req, file, cb) => cb(null, crypto.randomBytes(16).toString('hex') + EXT[file.mimetype]),
 });
 

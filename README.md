@@ -48,19 +48,32 @@ mockup but list static/empty content rather than live data.
 
 ## Quick start
 
-**Prerequisites:** Node 20.19+ (or 22.12+) and a running PostgreSQL instance.
-No Docker required — any local or hosted Postgres works.
+### Backend + database (Docker)
 
-### 1. Database
-
-Point the API at any Postgres database. For a local Homebrew install:
+The server and Postgres run as a two-container Docker Compose stack — this is
+the supported way to run the backend on a VPS or any Docker host.
 
 ```bash
-brew services start postgresql@17
-createdb buddyscript          # or use your own database + connection string
+cp .env.example .env          # then fill in JWT secrets + CLIENT_ORIGIN
+docker compose up -d --build  # builds the server image, starts db + server
 ```
 
-### 2. Server
+This applies Prisma migrations automatically on startup and exposes the API on
+`http://localhost:4000` (override with `SERVER_PORT` in `.env`). Uploaded
+images and the Postgres data both live in named Docker volumes, so they
+survive `docker compose down` / restarts.
+
+Seed demo data (4 users + sample posts) once the stack is up:
+
+```bash
+docker compose exec server npm run db:seed
+```
+
+Demo logins (seed): `alice@buddyscript.dev` … `dylan@buddyscript.dev`,
+password `password123`.
+
+To run the server without Docker instead (e.g. for local development against
+`npm run dev`'s hot reload), point it at any Postgres instance:
 
 ```bash
 cd server
@@ -71,10 +84,11 @@ npm run db:seed               # optional: 4 demo users + sample posts
 npm run dev                   # http://localhost:4000
 ```
 
-Demo logins (seed): `alice@buddyscript.dev` … `dylan@buddyscript.dev`,
-password `password123`.
+### Client
 
-### 3. Client
+The client is a static SPA — it isn't part of the Docker stack. Build it and
+serve `client/dist` from any static host / reverse proxy pointed at the API,
+or run it locally against either backend above:
 
 ```bash
 cd client

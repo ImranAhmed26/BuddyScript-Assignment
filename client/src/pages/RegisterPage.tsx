@@ -1,3 +1,4 @@
+// Rendered inside GuestRoute, which redirects already-authenticated users away.
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -19,6 +20,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
+    // Client-side only; server re-validates independently.
     if (password !== repeatPassword) {
       setError('Passwords do not match');
       return;

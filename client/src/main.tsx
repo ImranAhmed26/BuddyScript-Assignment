@@ -1,3 +1,4 @@
+// Sets up the query client/router and kicks off session restoration before render.
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -9,6 +10,7 @@ import './index.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      // Avoid refetching too aggressively; feed data doesn't change that fast.
       staleTime: 30_000,
       retry: 1,
       refetchOnWindowFocus: false,
@@ -16,7 +18,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Restore any existing session before the first render settles.
 void useAuthStore.getState().bootstrap();
 
 createRoot(document.getElementById('root')!).render(

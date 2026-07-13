@@ -1,8 +1,8 @@
+// Shared axios instance: attaches the access token and auto-refreshes+retries on 401.
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { API_BASE } from './config';
 
-// Access token lives in memory only (never localStorage) to limit XSS exposure.
-// The refresh token is an httpOnly cookie the browser sends automatically.
+// In-memory only (never localStorage) to limit XSS exposure.
 let accessToken: string | null = null;
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
@@ -19,7 +19,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Single-flight refresh: concurrent 401s share one refresh request.
+// Single-flight refresh: concurrent 401s share one pending refresh request instead of racing.
 let refreshing: Promise<string | null> | null = null;
 export function refreshAccessToken(): Promise<string | null> {
   if (!refreshing) {
@@ -51,10 +51,11 @@ api.interceptors.response.use(
   (res) => res,
   async (error: AxiosError) => {
     const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
+    // Skip refresh for auth endpoints themselves to avoid an infinite loop.
     const skipRefresh = AUTH_PATHS.some((p) => original?.url?.includes(p));
 
     if (error.response?.status === 401 && original && !original._retry && !skipRefresh) {
-      original._retry = true;
+      original._retry = true; // avoid retrying the same request twice
       const token = await refreshAccessToken();
       if (token) {
         original.headers.Authorization = `Bearer ${token}`;

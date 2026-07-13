@@ -1,5 +1,6 @@
 /** Parse a short duration string like "15m", "7d", "30s", "12h" into milliseconds. */
 export function parseDuration(value: string): number {
+  // Single number + unit only (no compound like "1h30m"); throws on anything else.
   const match = /^(\d+)\s*(ms|s|m|h|d)$/.exec(value.trim());
   if (!match) throw new Error(`Invalid duration: "${value}"`);
   const amount = Number(match[1]);

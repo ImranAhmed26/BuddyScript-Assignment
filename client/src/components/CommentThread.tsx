@@ -15,6 +15,27 @@ import {
 import { useAuthStore } from '../store/authStore';
 import { Avatar } from './Avatar';
 import { LikersModal } from './LikersModal';
+import { REACTIONS, type ReactionKey } from '../lib/reactions';
+import { useHoverIntent } from '../lib/useHoverIntent';
+
+// Renders comments/replies: reaction picker, inline edit/delete, lazy-loaded reply threads.
+
+/** Outline thumbs-up icon (blue), shown in place of the filled emoji. */
+function ThumbIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={filled ? '#377dff' : 'none'} stroke="#377dff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" />
+      <path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
+    </svg>
+  );
+}
+
+/** Active reaction icon; specific reaction is client-side only and resets on reload. */
+function ReactionIcon({ reaction }: { reaction: ReactionKey | null }) {
+  if (!reaction || reaction === 'like') return <ThumbIcon filled={Boolean(reaction)} />;
+  const emoji = REACTIONS.find((r) => r.key === reaction)?.emoji;
+  return <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>;
+}
 
 /** Small avatar + textarea composer used for both comments and replies. */
 function CommentComposer({
@@ -29,6 +50,7 @@ function CommentComposer({
   const user = useAuthStore((s) => s.user);
   const [text, setText] = useState('');
 
+  // Clear the textarea only after the mutation resolves, so a failed submit keeps the draft.
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const trimmed = text.trim();
@@ -90,6 +112,26 @@ function CommentItem({
   const [showLikers, setShowLikers] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(comment.content);
+  const picker = useHoverIntent();
+  // Client-only reaction type, seeded from server's `likedByMe` boolean.
+  const [reaction, setReaction] = useState<ReactionKey | null>(comment.likedByMe ? 'like' : null);
+
+  const pickReaction = (key: ReactionKey) => {
+    picker.hide();
+    setReaction(key);
+    // Only fire the like mutation if not already liked.
+    if (!comment.likedByMe) toggleLike.mutate(comment);
+  };
+
+  const toggleDefaultLike = () => {
+    // Optimistic local flip; mutation reconciles with the server.
+    if (comment.likedByMe) {
+      setReaction(null);
+    } else {
+      setReaction('like');
+    }
+    toggleLike.mutate(comment);
+  };
 
   const saveEdit = async () => {
     const trimmed = draft.trim();
@@ -98,6 +140,7 @@ function CommentItem({
     setEditing(false);
   };
 
+  // Replies/likers are fetched lazily, gated on showReplies/showLikers.
   const replies = useReplies(comment.id, showReplies);
   const likers = useCommentLikers(comment.id, showLikers);
 
@@ -152,13 +195,34 @@ function CommentItem({
 
         {!editing && (
           <div className="bs-comment-meta">
-            <button
-              type="button"
-              className={`bs-inline-btn ${comment.likedByMe ? 'bs-reaction-active' : ''}`}
-              onClick={() => toggleLike.mutate(comment)}
+            <div
+              className="bs-reaction-picker-wrap"
+              onMouseEnter={picker.show}
+              onMouseLeave={picker.scheduleHide}
             >
-              {comment.likedByMe ? 'Liked' : 'Like'}
-            </button>
+              <button
+                type="button"
+                className={`bs-inline-btn bs-reaction-trigger ${comment.likedByMe ? 'bs-reaction-active' : ''}`}
+                onClick={toggleDefaultLike}
+              >
+                <ReactionIcon reaction={comment.likedByMe ? reaction : null} />
+                {comment.likeCount > 0 && comment.likeCount}
+              </button>
+              {picker.open && (
+                <div className="bs-reaction-picker">
+                  {REACTIONS.map((r) => (
+                    <button
+                      key={r.key}
+                      type="button"
+                      title={r.label}
+                      onClick={() => pickReaction(r.key)}
+                    >
+                      {r.emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {!isReply && (
               <button type="button" className="bs-inline-btn" onClick={() => setReplying((v) => !v)}>
                 Reply
@@ -178,12 +242,12 @@ function CommentItem({
                 Delete
               </button>
             )}
+            <span className="_time_link">{timeAgo(comment.createdAt)}</span>
             {comment.likeCount > 0 && (
-              <button type="button" className="bs-like-pill bs-inline-btn" onClick={() => setShowLikers(true)}>
-                👍 {comment.likeCount}
+              <button type="button" className="bs-like-pill bs-inline-btn" style={{ marginLeft: 'auto' }} onClick={() => setShowLikers(true)}>
+                <ThumbIcon filled /> {comment.likeCount}
               </button>
             )}
-            <span className="_time_link">{timeAgo(comment.createdAt)}</span>
           </div>
         )}
 
@@ -237,7 +301,7 @@ function CommentItem({
   );
 }
 
-/** Full comment section for a post: composer + paginated comment list. */
+/** Comment section: composer + paginated list; replies load on demand per comment. */
 export function CommentThread({ postId }: { postId: string }) {
   const comments = useComments(postId, true);
   const createComment = useCreateComment(postId);

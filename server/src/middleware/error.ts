@@ -8,8 +8,7 @@ export function errorHandler(
   err: unknown,
   _req: Request,
   res: Response,
-  // next is required for Express to treat this as an error handler.
-  _next: NextFunction,
+  _next: NextFunction, // required for Express to treat this as an error handler
 ): void {
   if (err instanceof ApiError) {
     res.status(err.status).json({ error: err.message, details: err.details ?? undefined });
@@ -17,6 +16,7 @@ export function errorHandler(
   }
 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    // P2002 = unique constraint violation, P2025 = record not found.
     if (err.code === 'P2002') {
       res.status(409).json({ error: 'A record with this value already exists' });
       return;
@@ -27,12 +27,12 @@ export function errorHandler(
     }
   }
 
-  // Multer file-size / upload errors expose a `code`.
   if (typeof err === 'object' && err && 'code' in err && err.code === 'LIMIT_FILE_SIZE') {
     res.status(413).json({ error: 'Uploaded file is too large' });
     return;
   }
 
+  // Unrecognized error: log full detail, only leak message to client outside production.
   console.error('Unhandled error:', err);
   res.status(500).json({
     error: 'Internal server error',

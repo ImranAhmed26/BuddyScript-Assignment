@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
+/** Route guard for authenticated-only pages; mirrors GuestRoute, sends unauthenticated users to /login. */
 export function ProtectedRoute() {
   const status = useAuthStore((s) => s.status);
 

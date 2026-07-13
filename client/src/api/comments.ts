@@ -1,3 +1,4 @@
+// Comment/reply query hooks: paginated threads, CRUD, and optimistic like/unlike.
 import {
   useInfiniteQuery,
   useMutation,
@@ -108,10 +109,7 @@ function patchComment(data: CommentData | undefined, id: string, patch: (c: Comm
   };
 }
 
-/**
- * Toggle a like on a comment or reply. `listKey` is the cache (comments-of-post
- * or replies-of-parent) the item lives in, so we optimistically patch the right one.
- */
+/** Optimistically toggles like state in `listKey`'s cache; mirrors useTogglePostLike. */
 export function useToggleCommentLike(listKey: readonly unknown[]) {
   const qc = useQueryClient();
   return useMutation({
@@ -122,6 +120,7 @@ export function useToggleCommentLike(listKey: readonly unknown[]) {
       return { id: comment.id, result: data };
     },
     onMutate: async (comment) => {
+      // Prevent an in-flight refetch from clobbering the optimistic write.
       await qc.cancelQueries({ queryKey: listKey });
       const previous = qc.getQueryData<CommentData>(listKey);
       qc.setQueryData<CommentData>(listKey, (data) =>
@@ -133,6 +132,7 @@ export function useToggleCommentLike(listKey: readonly unknown[]) {
       );
       return { previous };
     },
+    // Revert to pre-mutation snapshot on failure.
     onError: (_e, _v, ctx) => {
       if (ctx?.previous) qc.setQueryData(listKey, ctx.previous);
     },

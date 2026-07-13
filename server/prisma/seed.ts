@@ -1,14 +1,16 @@
+// Dev/demo seed: wipes data and creates sample users/posts/comments.
 import { PrismaClient, type Visibility } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
+// Separate client since this runs standalone via `prisma db seed`.
 const prisma = new PrismaClient();
 
-const PASSWORD = 'password123';
+const PASSWORD = 'password123'; // shared demo password for all seeded users
 
 async function main() {
   console.log('🌱 Seeding…');
 
-  // Clean slate (order respects FKs, though cascades would handle it).
+  // Order respects FKs, though cascades would handle it.
   await prisma.commentLike.deleteMany();
   await prisma.postLike.deleteMany();
   await prisma.comment.deleteMany();
@@ -42,13 +44,11 @@ async function main() {
     });
 
     if (p.visibility === 'PUBLIC') {
-      // A couple of likes from other users.
       const likers = users.filter((u) => u.id !== p.author.id).slice(0, 2);
       await prisma.postLike.createMany({
         data: likers.map((u) => ({ userId: u.id, postId: post.id })),
       });
 
-      // One comment + one reply.
       const comment = await prisma.comment.create({
         data: { postId: post.id, authorId: bob.id, content: 'This is great, congrats!' },
       });
@@ -57,7 +57,6 @@ async function main() {
       });
       await prisma.commentLike.create({ data: { userId: carol.id, commentId: comment.id } });
 
-      // Fix up denormalized counters to match seeded rows.
       await prisma.post.update({
         where: { id: post.id },
         data: { likeCount: likers.length, commentCount: 2 },
