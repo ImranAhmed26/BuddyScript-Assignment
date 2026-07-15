@@ -18,9 +18,6 @@ import { LikersModal } from './LikersModal';
 import { REACTIONS, type ReactionKey } from '../lib/reactions';
 import { useHoverIntent } from '../lib/useHoverIntent';
 
-// Renders comments/replies: reaction picker, inline edit/delete, lazy-loaded reply threads.
-
-/** Outline thumbs-up icon (blue), shown in place of the filled emoji. */
 function ThumbIcon({ filled }: { filled: boolean }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill={filled ? '#377dff' : 'none'} stroke="#377dff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -30,14 +27,14 @@ function ThumbIcon({ filled }: { filled: boolean }) {
   );
 }
 
-/** Active reaction icon; specific reaction is client-side only and resets on reload. */
+// the specific reaction (love/haha/etc) is client-side only, so it resets on reload
 function ReactionIcon({ reaction }: { reaction: ReactionKey | null }) {
   if (!reaction || reaction === 'like') return <ThumbIcon filled={Boolean(reaction)} />;
   const emoji = REACTIONS.find((r) => r.key === reaction)?.emoji;
   return <span style={{ fontSize: 14, lineHeight: 1 }}>{emoji}</span>;
 }
 
-/** Small avatar + textarea composer used for both comments and replies. */
+// shared between top-level comments and replies
 function CommentComposer({
   onSubmit,
   isPending,
@@ -50,13 +47,12 @@ function CommentComposer({
   const user = useAuthStore((s) => s.user);
   const [text, setText] = useState('');
 
-  // Clear the textarea only after the mutation resolves, so a failed submit keeps the draft.
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const trimmed = text.trim();
     if (!trimmed) return;
     await onSubmit(trimmed);
-    setText('');
+    setText(''); // only clear once the mutation resolves so a failed submit keeps the draft
   };
 
   return (
@@ -113,18 +109,15 @@ function CommentItem({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(comment.content);
   const picker = useHoverIntent();
-  // Client-only reaction type, seeded from server's `likedByMe` boolean.
   const [reaction, setReaction] = useState<ReactionKey | null>(comment.likedByMe ? 'like' : null);
 
   const pickReaction = (key: ReactionKey) => {
     picker.hide();
     setReaction(key);
-    // Only fire the like mutation if not already liked.
     if (!comment.likedByMe) toggleLike.mutate(comment);
   };
 
   const toggleDefaultLike = () => {
-    // Optimistic local flip; mutation reconciles with the server.
     if (comment.likedByMe) {
       setReaction(null);
     } else {
@@ -140,8 +133,7 @@ function CommentItem({
     setEditing(false);
   };
 
-  // Replies/likers are fetched lazily, gated on showReplies/showLikers.
-  const replies = useReplies(comment.id, showReplies);
+  const replies = useReplies(comment.id, showReplies); // gated on showReplies/showLikers so nothing loads until expanded
   const likers = useCommentLikers(comment.id, showLikers);
 
   const replyList = replies.data?.pages.flatMap((p) => p.items) ?? [];
@@ -301,7 +293,6 @@ function CommentItem({
   );
 }
 
-/** Comment section: composer + paginated list; replies load on demand per comment. */
 export function CommentThread({ postId }: { postId: string }) {
   const comments = useComments(postId, true);
   const createComment = useCreateComment(postId);

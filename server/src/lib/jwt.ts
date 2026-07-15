@@ -7,15 +7,13 @@ export interface AccessTokenPayload {
   sub: string; // user id
 }
 
-/** Signs a short-lived access token (TTL from env.ACCESS_TOKEN_TTL, e.g. "15m"). */
 export function signAccessToken(userId: string): string {
   return jwt.sign({ sub: userId }, env.JWT_ACCESS_SECRET, {
-    // Cast needed: jsonwebtoken's type doesn't accept our arbitrary "<n><unit>" string.
+    // jsonwebtoken's types don't accept our "<n><unit>" string directly, hence the cast
     expiresIn: env.ACCESS_TOKEN_TTL as jwt.SignOptions['expiresIn'],
   });
 }
 
-/** Verifies signature + expiry and returns the payload; throws if invalid/expired/malformed. */
 export function verifyAccessToken(token: string): AccessTokenPayload {
   const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
   if (typeof decoded === 'string' || !decoded.sub) {
@@ -24,12 +22,12 @@ export function verifyAccessToken(token: string): AccessTokenPayload {
   return { sub: String(decoded.sub) };
 }
 
-/** Opaque refresh token — the raw value is only ever sent to the client cookie. */
+// raw refresh token, only ever sent back as the httpOnly cookie value
 export function generateRefreshToken(): string {
   return crypto.randomBytes(48).toString('hex');
 }
 
-/** We store only the SHA-256 hash, so a DB leak cannot reveal usable refresh tokens. */
+// We only ever persist this hash. If the DB leaks, the tokens in it are useless without the raw value.
 export function hashRefreshToken(raw: string): string {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }

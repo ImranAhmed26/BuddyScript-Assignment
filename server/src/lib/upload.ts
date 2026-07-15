@@ -19,11 +19,10 @@ const EXT: Record<string, string> = {
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadRoot),
-  // Random filename — never trust client-provided names (path traversal risk).
+  // random name, never the client-provided one (path traversal)
   filename: (_req, file, cb) => cb(null, crypto.randomBytes(16).toString('hex') + EXT[file.mimetype]),
 });
 
-/** Accepts a single optional `image` field; rejects non-images and oversized files. */
 export const uploadImage = multer({
   storage,
   limits: { fileSize: env.MAX_UPLOAD_BYTES, files: 1 },
@@ -33,5 +32,5 @@ export const uploadImage = multer({
   },
 }).single('image');
 
-/** Public URL path for a stored upload (served by express.static at /uploads). */
+// matches the express.static mount in app.ts
 export const uploadPublicPath = (filename: string): string => `/uploads/${filename}`;

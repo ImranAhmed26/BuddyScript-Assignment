@@ -1,6 +1,4 @@
-// Decorative left sidebar (Explore + Suggested People); no backing API in the MVP.
-
-// Hardcoded, non-functional; links are `href="#0"` for layout parity only.
+// links are href="#0" on purpose, this whole sidebar is layout-only, no API behind it
 const EXPLORE = [
   { label: 'Learning', badge: 'New' },
   { label: 'Insights' },

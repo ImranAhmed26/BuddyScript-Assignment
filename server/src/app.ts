@@ -9,27 +9,25 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { postsRouter } from './modules/posts/posts.routes.js';
 import { commentsRouter } from './modules/comments/comments.routes.js';
 
-// Factory (not a top-level app) so tests can build isolated instances.
+// Factory instead of a top-level app so tests can spin up isolated instances.
 export function createApp() {
   const app = express();
 
-  // Behind a proxy (Render/Railway) so secure cookies + rate-limit see real IPs.
-  app.set('trust proxy', 1);
+  app.set('trust proxy', 1); // sits behind Render/Railway's proxy, need real IPs for rate-limit
 
-  // Helmet's CORP default would block the cross-origin SPA from loading /uploads images.
+  // default CORP would block the SPA (different origin) from loading /uploads images
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
-  // Single known origin (not wildcard) required for credentials: true (refresh cookie).
   app.use(
     cors({
-      origin: env.CLIENT_ORIGIN,
+      origin: env.CLIENT_ORIGIN, // credentials: true means this can't be a wildcard
       credentials: true,
     }),
   );
-  // 1mb cap: posts are text only; images go through a separate multipart route.
+  // posts are text only, 1mb is plenty. images go through the multipart upload route
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 
@@ -40,7 +38,7 @@ export function createApp() {
   app.use('/api/posts', postsRouter);
   app.use('/api', commentsRouter);
 
-  // Must be last: order matters for Express error/404 handling.
+  // these have to come last for Express's error/404 handling to work
   app.use(notFound);
   app.use(errorHandler);
 

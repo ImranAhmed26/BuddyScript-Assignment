@@ -1,6 +1,4 @@
-// Decorative right sidebar ("You Might Like" + "Your Friends"); no backing API in the MVP.
-
-// Hardcoded; "Ignore"/"Follow" and the friend list have no backing data or click behavior.
+// hardcoded, "Ignore"/"Follow" don't do anything yet
 const FRIENDS = [
   { name: 'Steve Jobs', role: 'CEO of Apple', img: 'people1.png', online: false },
   { name: 'Ryan Roslansky', role: 'CEO of Linkedin', img: 'people2.png', online: true },

@@ -1,4 +1,3 @@
-// Comment/reply query hooks: paginated threads, CRUD, and optimistic like/unlike.
 import {
   useInfiniteQuery,
   useMutation,
@@ -109,7 +108,7 @@ function patchComment(data: CommentData | undefined, id: string, patch: (c: Comm
   };
 }
 
-/** Optimistically toggles like state in `listKey`'s cache; mirrors useTogglePostLike. */
+// mirrors useTogglePostLike but keyed off listKey since comments don't share one cache entry
 export function useToggleCommentLike(listKey: readonly unknown[]) {
   const qc = useQueryClient();
   return useMutation({
@@ -120,8 +119,7 @@ export function useToggleCommentLike(listKey: readonly unknown[]) {
       return { id: comment.id, result: data };
     },
     onMutate: async (comment) => {
-      // Prevent an in-flight refetch from clobbering the optimistic write.
-      await qc.cancelQueries({ queryKey: listKey });
+      await qc.cancelQueries({ queryKey: listKey }); // don't let a refetch stomp the optimistic write below
       const previous = qc.getQueryData<CommentData>(listKey);
       qc.setQueryData<CommentData>(listKey, (data) =>
         patchComment(data, comment.id, (c) => ({
@@ -132,8 +130,8 @@ export function useToggleCommentLike(listKey: readonly unknown[]) {
       );
       return { previous };
     },
-    // Revert to pre-mutation snapshot on failure.
     onError: (_e, _v, ctx) => {
+      // roll back to the snapshot taken in onMutate
       if (ctx?.previous) qc.setQueryData(listKey, ctx.previous);
     },
     onSuccess: ({ id, result }) => {
@@ -144,7 +142,7 @@ export function useToggleCommentLike(listKey: readonly unknown[]) {
   });
 }
 
-/** Who-liked lists, loaded on demand (e.g. when a modal opens). */
+// loaded lazily, only once the "liked by" modal is actually opened
 export function usePostLikers(postId: string, enabled: boolean) {
   return useInfiniteQuery({
     queryKey: queryKeys.postLikers(postId),

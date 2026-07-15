@@ -45,8 +45,8 @@ function serialize(c: CommentWithAuthor, likedByMe: boolean): CommentDTO {
   };
 }
 
-// One query to resolve viewer likes across a page, avoiding N+1 checks.
 async function likedCommentIds(viewerId: string, ids: string[]): Promise<Set<string>> {
+  // one query for the whole page instead of a like-check per comment
   if (ids.length === 0) return new Set();
   const rows = await prisma.commentLike.findMany({
     where: { userId: viewerId, commentId: { in: ids } },
@@ -55,7 +55,6 @@ async function likedCommentIds(viewerId: string, ids: string[]): Promise<Set<str
   return new Set(rows.map((r) => r.commentId));
 }
 
-/** Throws 404 unless the viewer may see the post this comment thread belongs to. */
 async function assertPostVisible(viewerId: string, postId: string): Promise<void> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -66,8 +65,8 @@ async function assertPostVisible(viewerId: string, postId: string): Promise<void
   }
 }
 
-// Shared cursor-pagination query for top-level comments and replies; `where`
-// selects the tree level. Ordered by (createdAt, id) for a stable cursor.
+// shared by top-level comments and replies - `where` picks the tree level, order is
+// (createdAt, id) so the cursor is stable
 async function listByParent(
   viewerId: string,
   where: Prisma.CommentWhereInput,
@@ -94,7 +93,6 @@ export async function listComments(
   return listByParent(viewerId, { postId, parentId: null }, pagination);
 }
 
-// Visibility is checked via the comment's parent post, not the comment itself.
 export async function listReplies(
   viewerId: string,
   parentId: string,
@@ -105,11 +103,10 @@ export async function listReplies(
     select: { postId: true },
   });
   if (!parent) throw new ApiError(404, 'Comment not found');
-  await assertPostVisible(viewerId, parent.postId);
+  await assertPostVisible(viewerId, parent.postId); // replies inherit visibility from the parent post
   return listByParent(viewerId, { parentId }, pagination);
 }
 
-// Transactional: touches both the comment table and the post's commentCount.
 export async function createComment(
   authorId: string,
   postId: string,
@@ -127,7 +124,6 @@ export async function createComment(
   return serialize(comment, false);
 }
 
-// Bumps both the post's commentCount and the parent's replyCount in one transaction.
 export async function createReply(
   authorId: string,
   parentId: string,
@@ -138,7 +134,7 @@ export async function createReply(
     select: { id: true, postId: true, parentId: true },
   });
   if (!parent) throw new ApiError(404, 'Comment not found');
-  // Max depth 2: you may reply to a comment, not to a reply.
+  // comments are capped at 2 levels deep, so you can reply to a comment but not to a reply
   if (parent.parentId !== null) {
     throw new ApiError(400, 'Replies can only be added to top-level comments');
   }
@@ -156,7 +152,6 @@ export async function createReply(
   return serialize(reply, false);
 }
 
-// Used by update/delete to enforce "you can only edit/remove your own comments".
 async function loadOwnedComment(userId: string, commentId: string) {
   const comment = await prisma.comment.findUnique({ where: { id: commentId } });
   if (!comment) throw new ApiError(404, 'Comment not found');
@@ -179,8 +174,8 @@ export async function updateComment(
   return serialize(comment, liked.has(comment.id));
 }
 
-// Replies cascade at the DB level; decrement commentCount by the whole subtree.
 export async function deleteComment(userId: string, commentId: string): Promise<void> {
+  // DB cascades the replies themselves, but we still need to decrement commentCount for the whole subtree
   const comment = await loadOwnedComment(userId, commentId);
   await prisma.$transaction(async (tx) => {
     if (comment.parentId === null) {
@@ -207,7 +202,6 @@ async function assertCommentVisible(viewerId: string, commentId: string): Promis
   await assertPostVisible(viewerId, comment.postId);
 }
 
-// Swallows Prisma's P2002 (duplicate like) to make the endpoint idempotent.
 export async function likeComment(userId: string, commentId: string): Promise<{ likeCount: number }> {
   await assertCommentVisible(userId, commentId);
   try {
@@ -216,18 +210,19 @@ export async function likeComment(userId: string, commentId: string): Promise<{ 
       prisma.comment.update({ where: { id: commentId }, data: { likeCount: { increment: 1 } } }),
     ]);
   } catch (err) {
+    // P2002 = duplicate like, i.e. they already liked it - swallow so this endpoint is idempotent
     if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')) throw err;
   }
   const c = await prisma.comment.findUniqueOrThrow({ where: { id: commentId }, select: { likeCount: true } });
   return { likeCount: c.likeCount };
 }
 
-// Only decrement when deleteMany actually removed a row, to avoid going negative.
 export async function unlikeComment(userId: string, commentId: string): Promise<{ likeCount: number }> {
   await assertCommentVisible(userId, commentId);
   await prisma.$transaction(async (tx) => {
     const removed = await tx.commentLike.deleteMany({ where: { userId, commentId } });
     if (removed.count > 0) {
+      // only decrement if a row was actually deleted, otherwise double-unlike would go negative
       await tx.comment.update({ where: { id: commentId }, data: { likeCount: { decrement: removed.count } } });
     }
   });

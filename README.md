@@ -1,94 +1,67 @@
 # Buddy Script — Social Feed
 
-A full-stack social feed built for the AppifyLab Full Stack Engineer selection
-task. Users register, log in, and share posts (text and/or image) that everyone
-can see, or keep private to themselves. Posts, comments, and replies can all be
-liked, and you can see exactly who liked each one.
+Full-stack social feed app built for the AppifyLab Full Stack Engineer selection task.
+Register, log in, and post text/images to a feed that's either public or private to
+you. Posts, comments and replies can all be liked, and you can see who liked what.
 
-- **Frontend:** Vite + React 19 + TypeScript, TanStack Query, Zustand, React Router
-- **Backend:** Node + Express (TypeScript, ESM), Prisma, PostgreSQL
-- **Auth:** JWT access tokens (in-memory) + rotating, hashed refresh tokens (httpOnly cookie)
+Frontend is Vite + React 19 + TypeScript, with TanStack Query for server state and
+Zustand for the small bit of client auth state. Backend is Node/Express (TypeScript,
+ESM) with Prisma on Postgres. Auth is JWT access tokens plus a rotating refresh token
+in an httpOnly cookie.
 
-The UI reuses the provided Buddy Script design (Bootstrap 5 + the supplied
-`common/main/responsive` CSS), including the full navigation bar, stories strip,
-light/dark theme, and both sidebars. A few purely decorative destinations that
-have no MVP backend (chat, friend requests, notifications feed, social graph) are
-rendered as faithful shells — the icons, dropdowns, and sidebar cards match the
-mockup but list static/empty content rather than live data.
+The UI is built on the Buddy Script design that was provided (Bootstrap 5 + the
+supplied CSS) — nav bar, stories strip, sidebars, light/dark theme all match the
+mockup. A handful of screens in that design (chat, friend requests, a real
+notifications feed) don't have a backend behind them since they weren't part of the
+brief, so those bits of UI are just static shells for now.
 
----
+## What's implemented
 
-## Feature checklist (from the brief)
+From the brief: registration (first/last name, email, password), JWT auth with a
+protected feed, a feed of everyone's posts newest-first, creating a post with text
+and/or an image, public vs private posts (enforced server-side, not just hidden in
+the UI), liking/unliking posts, commenting and replying, liking comments/replies, and
+a "who liked this" list for posts/comments/replies.
 
-| Requirement | Status |
-| --- | --- |
-| Register with first name, last name, email, password | ✅ |
-| Secure token/session auth, protected feed | ✅ JWT + refresh-cookie |
-| Feed shows all users' posts, newest first | ✅ cursor pagination |
-| Create post with text and/or image | ✅ multipart upload |
-| Public (everyone) vs private (author-only) posts | ✅ enforced server-side |
-| Like / unlike posts with correct state | ✅ optimistic UI |
-| Comment, and reply to comments | ✅ 2-level threads |
-| Like / unlike comments and replies | ✅ |
-| See who liked a post / comment / reply | ✅ "Liked by" modal |
+Past that, I also added: editing your own posts and comments, a debounced search over
+posts, the light/dark theme toggle from the design, copying a link to a post, and
+hiding a post from your own view.
 
-### Beyond the brief (design parity)
+## Running it
 
-| Feature | Notes |
-| --- | --- |
-| Edit a post (content + visibility) | Owner-only, from the post `⋮` menu |
-| Edit a comment / reply | Owner-only, inline |
-| Search posts | Backend `GET /posts?q=` (indexed), debounced search box |
-| Light / dark theme | Uses the design's `._dark_wrapper` theme, persisted |
-| Share (copy link) | Copies a permalink to the post |
-| Hide a post | Dismisses it from the current session view |
-| Full nav, stories, sidebars | Rendered to match the mockup |
-
----
-
-## Quick start
-
-### Backend + database (Docker)
-
-The server and Postgres run as a two-container Docker Compose stack — this is
-the supported way to run the backend on a VPS or any Docker host.
+**Backend + Postgres (Docker)** — this is the main supported path:
 
 ```bash
-cp .env.example .env          # then fill in JWT secrets + CLIENT_ORIGIN
-docker compose up -d --build  # builds the server image, starts db + server
+cp .env.example .env          # fill in JWT secrets + CLIENT_ORIGIN
+docker compose up -d --build
 ```
 
-This applies Prisma migrations automatically on startup and exposes the API on
-`http://localhost:4000` (override with `SERVER_PORT` in `.env`). Uploaded
-images and the Postgres data both live in named Docker volumes, so they
-survive `docker compose down` / restarts.
+Migrations run automatically on startup. API comes up on `http://localhost:4000`
+(change with `SERVER_PORT` in `.env`). Uploads and Postgres data are both in named
+Docker volumes so they survive restarts.
 
-Seed demo data (4 users + sample posts) once the stack is up:
+Seed some demo data once it's up:
 
 ```bash
 docker compose exec server npm run db:seed
 ```
 
-Demo logins (seed): `alice@buddyscript.dev` … `dylan@buddyscript.dev`,
-password `password123`.
+That creates 4 users (`alice@buddyscript.dev` through `dylan@buddyscript.dev`,
+password `password123`) with sample posts.
 
-To run the server without Docker instead (e.g. for local development against
-`npm run dev`'s hot reload), point it at any Postgres instance:
+If you'd rather run the server without Docker (e.g. for `npm run dev` hot reload),
+point it at any Postgres instance:
 
 ```bash
 cd server
-cp .env.example .env          # then edit DATABASE_URL + JWT secrets
+cp .env.example .env          # edit DATABASE_URL + JWT secrets
 npm install
-npm run prisma:migrate        # create the schema
-npm run db:seed               # optional: 4 demo users + sample posts
+npm run prisma:migrate
+npm run db:seed               # optional
 npm run dev                   # http://localhost:4000
 ```
 
-### Client
-
-The client is a static SPA — it isn't part of the Docker stack. Build it and
-serve `client/dist` from any static host / reverse proxy pointed at the API,
-or run it locally against either backend above:
+**Client** is a static SPA, not part of the Docker stack:
 
 ```bash
 cd client
@@ -96,92 +69,64 @@ npm install
 npm run dev                   # http://localhost:5173
 ```
 
-The client reads the API base URL from `client/.env`
-(`VITE_API_URL=http://localhost:4000/api`).
+It reads the API URL from `client/.env` (`VITE_API_URL=http://localhost:4000/api`).
 
----
-
-## Architecture
+## Layout
 
 ```
-client/                         server/
-  src/                            src/
-    store/authStore.ts  ← Zustand   modules/
-    api/                             auth/     register · login · refresh · me
-      posts.ts   comments.ts         posts/    feed · create · like · likers
-    components/                      comments/ comment · reply · like · likers
-      PostCard  CommentThread       lib/       jwt · password · pagination · upload
-      CreatePost  LikersModal       middleware/ auth · validate · error
-      Navbar  Avatar  *Route        prisma/    schema · migrations · seed
-    pages/  Login · Register · Feed
+client/src/
+  store/authStore.ts   Zustand — current user, login/register/logout
+  api/                 TanStack Query hooks (posts, comments)
+  components/          PostCard, CommentThread, CreatePost, Navbar, etc.
+  pages/                Login, Register, Feed
+
+server/src/
+  modules/
+    auth/               register, login, refresh, me
+    posts/              feed, create, like, likers
+    comments/           comment, reply, like, likers
+  lib/                  jwt, password hashing, pagination, upload handling
+  middleware/           auth, request validation, error handling
+  prisma/               schema, migrations, seed script
 ```
 
-### State management
+Server state (feed, comments, likes) all lives in TanStack Query — likes update
+optimistically and reconcile against the server's real counts. Zustand only holds
+auth/session state since that's the one thing that's genuinely global on the client;
+everything else is local component state.
 
-- **Server state** lives in **TanStack Query** — the feed, comments, replies, and
-  "who liked" lists are all queries/mutations with cache updates. Likes use
-  optimistic updates and reconcile against the server's authoritative counts.
-- **Client/session state** lives in a single **Zustand** store (`authStore`) — the
-  current user, auth status, and login/register/logout/bootstrap actions. This is
-  the one piece of genuinely global client state, so it's the only place Zustand is
-  used; everything else stays local component state.
+Auth: login/register hands back a short-lived access token (kept in memory, not
+localStorage) plus a refresh token as an httpOnly cookie. Axios attaches the access
+token and on a 401 calls `/auth/refresh` once — concurrent 401s share that single
+refresh call instead of each firing their own. Refresh tokens are random values,
+stored only as a SHA-256 hash, and rotated every time one's used.
 
-### Auth flow
+Data model is `User / Post / Comment / PostLike / CommentLike / RefreshToken`, see
+`server/prisma/schema.prisma`. Comments self-reference via `parentId` and are capped
+at two levels (comment → reply); the server rejects replying to a reply. Post and
+comment likes are separate tables rather than one polymorphic likes table, mainly so
+each can have a real foreign key, cascade delete, and a `@@unique([userId, ...])`
+constraint that makes a like idempotent by construction rather than relying on
+application logic to prevent duplicates.
 
-1. Login/register returns a short-lived **access token** (kept in memory only,
-   never `localStorage`) and sets a **refresh token** as an `httpOnly` cookie.
-2. Axios attaches the access token; on a `401` it transparently calls
-   `/auth/refresh` once (single-flight, so concurrent 401s share one refresh) and
-   retries the original request.
-3. Refresh tokens are random 48-byte values stored **only as SHA-256 hashes**, and
-   are **rotated** on every refresh (old token revoked). On app load the client
-   silently bootstraps a session from the cookie.
+## A few decisions worth calling out
 
----
+The brief mentioned assuming millions of posts, so a couple of things are there
+specifically for that: feed/comment pagination is cursor-based (`take limit + 1`,
+no `OFFSET`), so paging in doesn't get slower the deeper you go. Like/comment counts
+are stored on the post itself and updated in the same transaction as the write,
+instead of running a `COUNT(*)` every time the feed renders. Resolving whether the
+viewer has liked each post in a page is one batched query by id, not one query per
+post.
 
-## Data model
+On the security side: bcrypt for passwords, refresh tokens hashed at rest, Zod
+validation on all input, ownership checks before any edit/delete, helmet, CORS locked
+to the client origin, rate limiting on the auth routes, and uploads restricted by
+mime type/size with randomized filenames. Private posts are filtered out at the query
+level (`visibility = PUBLIC OR authorId = viewer`) rather than trusting the client to
+just not show them.
 
-`User · Post · Comment · PostLike · CommentLike · RefreshToken` (see
-[`server/prisma/schema.prisma`](server/prisma/schema.prisma)).
-
-- **Comments** self-reference via `parentId` and are capped at 2 levels
-  (comment → reply); replying to a reply is rejected server-side.
-- **Separate like tables** (`PostLike`, `CommentLike`) rather than one polymorphic
-  table — this keeps real foreign keys and cascade deletes, and each has a
-  `@@unique([userId, …])` constraint so a like is idempotent by construction.
-
----
-
-## Designed for scale & security
-
-The brief asked to assume millions of posts and reads, with security and UX first.
-
-**Read scale**
-- **Cursor-based pagination** (`take limit + 1`) everywhere — no `OFFSET`, so page
-  N costs the same as page 1.
-- **Denormalized counters** (`likeCount`, `commentCount`, `replyCount`) updated in
-  the same transaction as the write, so rendering the feed never runs `COUNT(*)`.
-- **Composite indexes** matching the query patterns (feed ordering, per-post
-  comments, like lookups).
-- **Batched like-state** — a page of posts resolves the viewer's `likedByMe` in one
-  query keyed by the ids, avoiding N+1.
-
-**Security**
-- Passwords hashed with **bcrypt** (cost 12); refresh tokens hashed at rest.
-- All input validated with **Zod**; ownership checked before deletes.
-- **helmet**, CORS locked to the client origin with credentials, and
-  **rate-limited** auth endpoints.
-- Uploads are constrained by MIME type and size and stored under random filenames.
-- Private posts are filtered in the query itself (`PUBLIC` OR `author = viewer`),
-  never trusting the client.
-
----
-
-## Notes & trade-offs
-
-- Image uploads are written to local disk (`server/uploads`) for simplicity; in
-  production this would be object storage (S3/GCS) behind a CDN. The counters and
-  pagination design is what would carry the "millions of rows" requirement.
-- The design's non-feed screens (chat, notifications, friend requests) are out of
-  scope and not implemented.
-```
+Uploaded images go to local disk (`server/uploads`) for now — in a real deployment
+that'd move to S3/GCS behind a CDN, but wasn't worth the setup for this. Chat,
+notifications, and friend requests are the parts of the design with no backend, and
+are intentionally left as static UI only.

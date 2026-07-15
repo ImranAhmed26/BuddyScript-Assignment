@@ -35,8 +35,7 @@ function AccountDropdown({
         <li className="_nav_dropdown_list_item">
           <button
             type="button"
-            // Settings: no onClick, out of scope for the MVP.
-            className="_nav_dropdown_link bs-inline-btn"
+            className="_nav_dropdown_link bs-inline-btn" // no onClick, settings isn't built yet
             style={{ width: '100%' }}
             title="Settings (coming soon)"
           >
@@ -92,7 +91,6 @@ function AccountDropdown({
   );
 }
 
-/** Top nav (desktop) plus the mockup's dedicated mobile top bar + bottom tab bar. */
 export function Navbar() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -102,8 +100,8 @@ export function Navbar() {
   const [menu, setMenu] = useState<Menu>(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  // Debounce so we don't fire a request per keystroke.
   useEffect(() => {
+    // debounced, otherwise we'd fire a search request on every keystroke
     const id = setTimeout(() => setSearch(term), 300);
     return () => clearTimeout(id);
   }, [term, setSearch]);
@@ -117,7 +115,7 @@ export function Navbar() {
 
   return (
     <>
-      {/* Desktop nav — hidden below the lg breakpoint in favor of the mobile bars below. */}
+      {/* hidden below lg, the mobile bars further down take over there */}
       <nav className="navbar navbar-expand-lg navbar-light _header_nav _padd_t10">
         <div className="container _custom_container">
           <div className="_logo_wrap">
@@ -153,8 +151,8 @@ export function Navbar() {
                   </svg>
                 </a>
               </li>
-              {/* Friend requests: static icon, not part of the MVP. */}
               <li className="nav-item _header_nav_item">
+                {/* static, friend requests aren't wired up */}
                 <span className="nav-link _header_nav_link" title="Friend requests (coming soon)">
                   <svg xmlns="http://www.w3.org/2000/svg" width="26" height="20" fill="none" viewBox="0 0 26 20">
                     <path fill="#000" fillOpacity=".6" fillRule="evenodd" d="M12.79 12.15h.429c2.268.015 7.45.243 7.45 3.732 0 3.466-5.002 3.692-7.415 3.707h-.894c-2.268-.015-7.452-.243-7.452-3.727 0-3.47 5.184-3.697 7.452-3.711l.297-.001h.132zm0 1.75c-2.792 0-6.12.34-6.12 1.962 0 1.585 3.13 1.955 5.864 1.976l.255.002c2.792 0 6.118-.34 6.118-1.958 0-1.638-3.326-1.982-6.118-1.982zm9.343-2.224c2.846.424 3.444 1.751 3.444 2.79 0 .636-.251 1.794-1.931 2.43a.882.882 0 01-1.137-.506.873.873 0 01.51-1.13c.796-.3.796-.633.796-.793 0-.511-.654-.868-1.944-1.06a.878.878 0 01-.741-.996.886.886 0 011.003-.735zm-17.685.735a.878.878 0 01-.742.997c-1.29.19-1.944.548-1.944 1.059 0 .16 0 .491.798.793a.873.873 0 01-.314 1.693.897.897 0 01-.313-.057C.25 16.259 0 15.1 0 14.466c0-1.037.598-2.366 3.446-2.79.485-.06.929.257 1.002.735zM12.789 0c2.96 0 5.368 2.392 5.368 5.33 0 2.94-2.407 5.331-5.368 5.331h-.031a5.329 5.329 0 01-3.782-1.57 5.253 5.253 0 01-1.553-3.764C7.423 2.392 9.83 0 12.789 0zm0 1.75c-1.987 0-3.604 1.607-3.604 3.58a3.526 3.526 0 001.04 2.527 3.58 3.58 0 002.535 1.054l.03.875v-.875c1.987 0 3.605-1.605 3.605-3.58S14.777 1.75 12.789 1.75z" clipRule="evenodd" />
@@ -173,7 +171,7 @@ export function Navbar() {
                       <path fill="#000" fillOpacity=".6" fillRule="evenodd" d="M7.547 19.55c.533.59 1.218.915 1.93.915.714 0 1.403-.324 1.938-.916a.777.777 0 011.09-.056c.318.284.344.77.058 1.084-.832.917-1.927 1.423-3.086 1.423h-.002c-1.155-.001-2.248-.506-3.077-1.424a.762.762 0 01.057-1.083.774.774 0 011.092.057zM9.527 0c4.58 0 7.657 3.543 7.657 6.85 0 1.702.436 2.424.899 3.19.457.754.976 1.612.976 3.233-.36 4.14-4.713 4.478-9.531 4.478-4.818 0-9.172-.337-9.528-4.413-.003-1.686.515-2.544.973-3.299l.161-.27c.398-.679.737-1.417.737-2.918C1.871 3.543 4.948 0 9.528 0z" clipRule="evenodd" />
                     </svg>
                   </button>
-                  {/* Not implemented server-side; always shows a static "all caught up" message. */}
+                  {/* no server-side notifications yet, this just always shows "all caught up" */}
                   <div className={`_notification_dropdown ${menu === 'notify' ? 'show' : ''}`} style={{ height: 'auto', maxHeight: 'min(70vh, 420px)' }}>
                     <div className="_notifications_content">
                       <h4 className="_notifications_content_title">Notifications</h4>
@@ -184,8 +182,8 @@ export function Navbar() {
                   </div>
                 </span>
               </li>
-              {/* Messages: static icon, chat isn't implemented. */}
               <li className="nav-item _header_nav_item">
+                {/* chat isn't built, this icon just sits here */}
                 <span className="nav-link _header_nav_link" title="Messages (coming soon)">
                   <svg xmlns="http://www.w3.org/2000/svg" width="23" height="22" fill="none" viewBox="0 0 23 22">
                     <path fill="#000" fillOpacity=".6" fillRule="evenodd" d="M11.43 0c2.96 0 5.743 1.143 7.833 3.22 4.32 4.29 4.32 11.271 0 15.562C17.145 20.886 14.293 22 11.405 22c-1.575 0-3.16-.33-4.643-1.012-.437-.174-.847-.338-1.14-.338-.338.002-.793.158-1.232.308-.9.307-2.022.69-2.852-.131-.826-.822-.445-1.932-.138-2.826.152-.44.307-.895.307-1.239 0-.282-.137-.642-.347-1.161C-.57 11.46.322 6.47 3.596 3.22A11.04 11.04 0 0111.43 0zm0 1.535A9.5 9.5 0 004.69 4.307a9.463 9.463 0 00-1.91 10.686c.241.592.474 1.17.474 1.77 0 .598-.207 1.201-.39 1.733-.15.439-.378 1.1-.231 1.245.143.147.813-.085 1.255-.235.53-.18 1.133-.387 1.73-.391.597 0 1.161.225 1.758.463 3.655 1.679 7.98.915 10.796-1.881 3.716-3.693 3.716-9.7 0-13.391a9.5 9.5 0 00-6.74-2.77z" clipRule="evenodd" />
@@ -228,7 +226,7 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile top bar: only branding + a search toggle (shown below the lg breakpoint). */}
+      {/* mobile top bar, just branding and a search toggle */}
       <div className="_header_mobile_menu">
         <div className="_header_mobile_menu_wrap">
           <div className="container">
@@ -269,7 +267,7 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile bottom tab bar (shown below the lg breakpoint). */}
+      {/* bottom tab bar, mobile only */}
       <div className="_mobile_navigation_bottom_wrapper">
         <div className="_mobile_navigation_bottom_wrap">
           <div className="container">
@@ -284,7 +282,7 @@ export function Navbar() {
                       </svg>
                     </a>
                   </li>
-                  {/* Friend requests / messages: static icons, not part of the MVP. */}
+                  {/* same static friend-requests/messages icons as the desktop nav */}
                   <li className="_mobile_navigation_bottom_item">
                     <span className="_mobile_navigation_bottom_link" title="Friend requests (coming soon)">
                       <svg xmlns="http://www.w3.org/2000/svg" width="27" height="20" fill="none" viewBox="0 0 27 20">
@@ -339,7 +337,6 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Backdrop that closes whichever dropdown is open on outside click. */}
       {menu && <div className="bs-dropdown-backdrop" onClick={() => setMenu(null)} />}
     </>
   );

@@ -1,8 +1,7 @@
-// Shared axios instance: attaches the access token and auto-refreshes+retries on 401.
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { API_BASE } from './config';
 
-// In-memory only (never localStorage) to limit XSS exposure.
+// kept in memory only, never localStorage, to limit XSS exposure
 let accessToken: string | null = null;
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
@@ -19,7 +18,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Single-flight refresh: concurrent 401s share one pending refresh request instead of racing.
+// single-flight: if several requests 401 at once they all await the same refresh call
 let refreshing: Promise<string | null> | null = null;
 export function refreshAccessToken(): Promise<string | null> {
   if (!refreshing) {
@@ -67,7 +66,6 @@ api.interceptors.response.use(
   },
 );
 
-/** Extracts a human-readable message from an Axios/API error. */
 export function getErrorMessage(err: unknown, fallback = 'Something went wrong'): string {
   if (axios.isAxiosError(err)) {
     const data = err.response?.data as { error?: string; details?: unknown } | undefined;

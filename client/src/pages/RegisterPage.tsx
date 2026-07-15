@@ -1,4 +1,3 @@
-// Rendered inside GuestRoute, which redirects already-authenticated users away.
 import { useCallback, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
@@ -23,7 +22,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
-    // Client-side only; server re-validates independently.
+    // these checks are just for UX, the server validates everything again anyway
     if (!agreedToTerms) {
       setError('You must agree to the terms & conditions');
       return;

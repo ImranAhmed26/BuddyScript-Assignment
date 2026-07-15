@@ -8,7 +8,7 @@ interface AvatarProps {
   className?: string;
 }
 
-/** Round avatar, falls back to initials when no image is set; size is explicit since it's reused across many contexts. */
+// size is a prop rather than a fixed value since this gets reused at several sizes across the app
 export function Avatar({ user, size = 40, className }: AvatarProps) {
   const dimension = { width: size, height: size };
   const src = resolveUpload(user.avatarUrl);

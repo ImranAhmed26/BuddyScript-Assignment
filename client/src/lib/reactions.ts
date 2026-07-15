@@ -1,4 +1,4 @@
-// Presentation-only: backend only stores a boolean like, no persisted reaction type.
+// UI-only list, the backend just has a boolean like flag, no reaction type
 export const REACTIONS = [
   { key: 'like', emoji: '👍', label: 'Like' },
   { key: 'love', emoji: '❤️', label: 'Love' },

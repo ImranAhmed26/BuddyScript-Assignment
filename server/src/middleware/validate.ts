@@ -8,7 +8,7 @@ interface Schemas {
   params?: ZodTypeAny;
 }
 
-/** Parsed query goes on `res.locals.query` since `req.query` is read-only in v5-style setups. */
+// parsed query goes on res.locals.query, not req.query - that's read-only in this Express setup
 export const validate =
   (schemas: Schemas) => (req: Request, res: Response, next: NextFunction) => {
     try {

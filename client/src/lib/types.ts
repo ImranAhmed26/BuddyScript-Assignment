@@ -42,13 +42,13 @@ export interface Comment {
   updatedAt: string;
 }
 
-/** Cursor-paginated list shape returned by all paginated endpoints. */
+// shape returned by every cursor-paginated endpoint
 export interface Page<T> {
   items: T[];
   nextCursor: string | null;
 }
 
-/** Authoritative like state used to reconcile optimistic cache updates. */
+// server's authoritative counts, used to reconcile after an optimistic update
 export interface LikeResult {
   likedByMe: boolean;
   likeCount: number;

@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
-/** Operational error with an HTTP status; thrown from services/controllers. */
+// Thrown from services/controllers when we want a specific status code back to the client.
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -14,7 +14,6 @@ export class ApiError extends Error {
 
 type AsyncRouteHandler = (req: Request, res: Response, next: NextFunction) => Promise<unknown>;
 
-/** Wraps an async handler so rejected promises reach the error middleware. */
 export const asyncHandler =
   (fn: AsyncRouteHandler) => (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);

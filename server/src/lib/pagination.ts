@@ -2,9 +2,8 @@
 import { z } from 'zod';
 
 export const DEFAULT_PAGE_SIZE = 10;
-export const MAX_PAGE_SIZE = 50; // hard cap so callers can't request unbounded pages
+export const MAX_PAGE_SIZE = 50; // callers can't request unbounded pages
 
-/** Shared query schema for cursor pagination. */
 export const paginationSchema = z.object({
   cursor: z.string().cuid().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
@@ -17,7 +16,8 @@ export interface Page<T> {
   nextCursor: string | null;
 }
 
-/** Splits off the "+1" over-fetched row to detect a next page without a COUNT query. */
+// Callers fetch limit+1 rows; if that extra row shows up we know there's a next page,
+// no separate COUNT query needed.
 export function buildPage<T extends { id: string }>(rows: T[], limit: number): Page<T> {
   const hasMore = rows.length > limit;
   const items = hasMore ? rows.slice(0, limit) : rows;

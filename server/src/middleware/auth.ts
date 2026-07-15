@@ -13,7 +13,6 @@ declare global {
   }
 }
 
-/** Rejects the request unless a valid Bearer access token is present. */
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
   const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
@@ -21,10 +20,10 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
     return next(new ApiError(401, 'Authentication required'));
   }
   try {
-    // Any failure (bad signature, expired, malformed) is treated the same — reason isn't leaked.
     req.userId = verifyAccessToken(token).sub;
     next();
   } catch {
+    // bad signature, expired, malformed - doesn't matter which, client just gets a generic 401
     next(new ApiError(401, 'Invalid or expired token'));
   }
 }

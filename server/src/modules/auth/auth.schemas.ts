@@ -15,7 +15,7 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('A valid email is required'),
-  // No complexity check — login must accept whatever the user already set.
+  // no complexity rules here, login just needs to accept whatever the user already set
   password: z.string().min(1, 'Password is required'),
 });
 

@@ -26,7 +26,6 @@ export async function listReplies(req: Request, res: Response): Promise<void> {
   res.json(page);
 }
 
-// Nesting depth capped at 1 — see service.
 export async function createReply(req: Request, res: Response): Promise<void> {
   const reply = await commentsService.createReply(req.userId!, req.params.id, req.body.content);
   res.status(201).json(reply);
@@ -36,8 +35,8 @@ export async function update(req: Request, res: Response): Promise<void> {
   res.json(await commentsService.updateComment(req.userId!, req.params.id, req.body.content));
 }
 
-// Deleting a top-level comment also removes its replies (see comments.service).
 export async function remove(req: Request, res: Response): Promise<void> {
+  // top-level comment deletes take their replies with them, handled in the service
   await commentsService.deleteComment(req.userId!, req.params.id);
   res.status(204).end();
 }

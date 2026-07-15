@@ -8,7 +8,7 @@ export function initials(a: AuthorSummary): string {
   return `${a.firstName[0] ?? ''}${a.lastName[0] ?? ''}`.toUpperCase();
 }
 
-/** Compact relative time: "just now", "5m", "3h", "2d", else a date. */
+// "just now" / "5m" / "3h" / "2d", falls back to a plain date after a week
 export function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
   const secs = Math.floor((Date.now() - then) / 1000);

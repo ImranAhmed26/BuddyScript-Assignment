@@ -1,13 +1,12 @@
 import { useUiStore } from '../store/uiStore';
 
-/** Floating light/dark toggle; FeedPage applies `._dark_wrapper` based on the store flag. */
 export function ThemeSwitch() {
   const theme = useUiStore((s) => s.theme);
   const toggleTheme = useUiStore((s) => s.toggleTheme);
 
   return (
     <div className="_layout_mode_swithing_btn">
-      {/* Sun/moon layers cross-fade via CSS based on `._dark_wrapper` — no conditional render needed. */}
+      {/* the sun/moon icons below cross-fade purely via CSS off ._dark_wrapper, nothing conditional here */}
       <button
         type="button"
         className="_layout_swithing_btn_link"

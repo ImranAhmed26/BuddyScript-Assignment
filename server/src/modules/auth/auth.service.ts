@@ -17,16 +17,14 @@ const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
 export interface IssuedTokens {
   accessToken: string;
-  refreshToken: string; // raw — caller sets it as an httpOnly cookie
+  refreshToken: string; // raw value, caller is responsible for putting this in the httpOnly cookie
   refreshExpiresAt: Date;
 }
 
-/** Creates an access token + a rotated, DB-backed refresh token for a user. */
 async function issueTokens(userId: string): Promise<IssuedTokens> {
   const refreshToken = generateRefreshToken();
   const refreshExpiresAt = new Date(Date.now() + parseDuration(env.REFRESH_TOKEN_TTL));
 
-  // Only the hash is persisted, so a DB leak alone can't be replayed as a session.
   await prisma.refreshToken.create({
     data: {
       userId,
@@ -60,19 +58,19 @@ export async function register(
 
 export async function login(input: LoginInput): Promise<{ user: User; tokens: IssuedTokens }> {
   const user = await prisma.user.findUnique({ where: { email: input.email } });
-  // Always verify against a hash to reduce timing/user-enumeration signal.
+  // hash a dummy value even when the user doesn't exist, so a missing account doesn't respond faster
   const ok = await verifyPassword(
     input.password,
     user?.passwordHash ?? '$2a$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinva',
   );
-  // Google-only accounts have no passwordHash — reject rather than let a null hash "match".
   if (!user || !user.passwordHash || !ok) {
+    // no passwordHash means it's a Google-only account; treat that the same as a bad password
     throw new ApiError(401, 'Invalid email or password');
   }
   return { user, tokens: await issueTokens(user.id) };
 }
 
-/** Verifies a Google ID token, then finds-or-creates a user (linked by email if it already exists). */
+// verifies the Google ID token, then finds a matching user or creates one
 export async function loginWithGoogle(idToken: string): Promise<{ user: User; tokens: IssuedTokens }> {
   const ticket = await googleClient.verifyIdToken({ idToken, audience: env.GOOGLE_CLIENT_ID });
   const payload = ticket.getPayload();
@@ -87,7 +85,7 @@ export async function loginWithGoogle(idToken: string): Promise<{ user: User; to
   let user = await prisma.user.findFirst({ where: { OR: [{ googleId: payload.sub }, { email }] } });
 
   if (user) {
-    // Link: a pre-existing email/password account signing in with Google for the first time.
+    // first Google sign-in for an account that was originally created with email/password
     if (!user.googleId) {
       user = await prisma.user.update({ where: { id: user.id }, data: { googleId: payload.sub } });
     }
@@ -106,7 +104,6 @@ export async function loginWithGoogle(idToken: string): Promise<{ user: User; to
   return { user, tokens: await issueTokens(user.id) };
 }
 
-/** Validates a presented refresh token, rotates it, and returns fresh tokens. */
 export async function rotateRefreshToken(rawToken: string): Promise<IssuedTokens> {
   const record = await prisma.refreshToken.findUnique({
     where: { tokenHash: hashRefreshToken(rawToken) },
@@ -124,15 +121,14 @@ export async function rotateRefreshToken(rawToken: string): Promise<IssuedTokens
   return issueTokens(record.userId);
 }
 
-// updateMany so a missing/already-revoked token no-ops instead of throwing.
 export async function revokeRefreshToken(rawToken: string): Promise<void> {
+  // updateMany over update: a missing or already-revoked token should just no-op, not throw
   await prisma.refreshToken.updateMany({
     where: { tokenHash: hashRefreshToken(rawToken), revokedAt: null },
     data: { revokedAt: new Date() },
   });
 }
 
-// 404s if not found, e.g. account deleted after the access token was issued.
 export async function getUserById(userId: string): Promise<User> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new ApiError(404, 'User not found');

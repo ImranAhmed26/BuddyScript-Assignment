@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { ApiError } from '../lib/http.js';
 import { isProd } from '../env.js';
 
-/** Central error handler — maps known errors to clean HTTP responses. */
+// Maps known error types to clean HTTP responses; anything else falls through to a 500 below.
 export function errorHandler(
   err: unknown,
   _req: Request,
@@ -32,8 +32,7 @@ export function errorHandler(
     return;
   }
 
-  // Unrecognized error: log full detail, only leak message to client outside production.
-  console.error('Unhandled error:', err);
+  console.error('Unhandled error:', err); // log full detail server-side regardless of env
   res.status(500).json({
     error: 'Internal server error',
     ...(isProd ? {} : { detail: err instanceof Error ? err.message : String(err) }),

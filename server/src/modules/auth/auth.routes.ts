@@ -7,7 +7,7 @@ import { requireAuth } from '../../middleware/auth.js';
 import { googleLoginSchema, loginSchema, registerSchema } from './auth.schemas.js';
 import * as authController from './auth.controller.js';
 
-// Blunt brute-force / credential-stuffing attempts.
+// slows down brute-force/credential-stuffing attempts on these endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -36,7 +36,7 @@ authRouter.post(
   validate({ body: googleLoginSchema }),
   asyncHandler(authController.google),
 );
-// Refresh/logout rely on the httpOnly cookie, not requireAuth.
+// no requireAuth here - these two work off the httpOnly cookie instead
 authRouter.post('/refresh', asyncHandler(authController.refresh));
 authRouter.post('/logout', asyncHandler(authController.logout));
 authRouter.get('/me', requireAuth, asyncHandler(authController.me));

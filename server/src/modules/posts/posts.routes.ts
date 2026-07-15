@@ -1,4 +1,4 @@
-// Route definitions for /api/posts — feed, CRUD, and like endpoints.
+// Route definitions for /api/posts: feed, CRUD, and like endpoints.
 import { Router } from 'express';
 import { asyncHandler } from '../../lib/http.js';
 import { requireAuth } from '../../middleware/auth.js';

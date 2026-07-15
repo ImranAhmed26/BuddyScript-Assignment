@@ -5,7 +5,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import FeedPage from './pages/FeedPage';
 
-/** Top-level route table; auth redirect logic lives in GuestRoute/ProtectedRoute. */
+// redirect logic for logged-in/out users lives in GuestRoute/ProtectedRoute
 export default function App() {
   return (
     <Routes>

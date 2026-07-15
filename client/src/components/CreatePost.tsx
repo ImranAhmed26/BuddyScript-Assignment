@@ -4,9 +4,8 @@ import { getErrorMessage } from '../lib/apiClient';
 import { useAuthStore } from '../store/authStore';
 import { Avatar } from './Avatar';
 
-// `label` is omitted (empty string) for the mobile bar, which the mockup's CSS
-// constrains to a 20x20px icon-only box — a visible label there would overflow onto
-// neighboring icons.
+// mobile bar passes label="", the mockup's CSS boxes this at 20x20px so text would
+// spill onto the next icon
 function PhotoButton({ onClick, label = 'Photo' }: { onClick: () => void; label?: string }) {
   return (
     <div className="_feed_inner_text_area_bottom_photo _feed_common">
@@ -61,12 +60,10 @@ function PostButton({ pending }: { pending: boolean }) {
   );
 }
 
-/** Post composer: text and/or image. Video/Event/Article are disabled mockup-parity buttons. */
 export function CreatePost() {
   const user = useAuthStore((s) => s.user);
   const createPost = useCreatePost();
-  // Hidden native input, triggered by the styled "Photo" button below.
-  const fileInput = useRef<HTMLInputElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null); // hidden, triggered by the styled Photo button
 
   const [content, setContent] = useState('');
   const [image, setImage] = useState<File | null>(null);
@@ -76,8 +73,7 @@ export function CreatePost() {
   const pickImage = (file: File | null) => {
     setImage(file);
     setPreview((old) => {
-      // Revoke the previous object URL to avoid leaking blob URLs.
-      if (old) URL.revokeObjectURL(old);
+      if (old) URL.revokeObjectURL(old); // don't leak the previous blob URL
       return file ? URL.createObjectURL(file) : null;
     });
   };
@@ -85,7 +81,7 @@ export function CreatePost() {
   const reset = () => {
     setContent('');
     pickImage(null);
-    // Clear directly since it's uncontrolled, so re-selecting the same file re-fires onChange.
+    // reset the uncontrolled input directly so picking the same file again still fires onChange
     if (fileInput.current) fileInput.current.value = '';
   };
 
@@ -113,7 +109,7 @@ export function CreatePost() {
           <div className="_feed_inner_text_area_box_image">
             {user && <Avatar user={user} size={40} className="_txt_img" />}
           </div>
-          {/* Bootstrap "form-floating" pattern — label animation is pure CSS, no JS state needed. */}
+          {/* bootstrap's form-floating pattern, label animation is pure CSS */}
           <div className="form-floating _feed_inner_text_area_box_form">
             <textarea
               className="form-control _textarea"
@@ -150,7 +146,7 @@ export function CreatePost() {
           onChange={(e) => pickImage(e.target.files?.[0] ?? null)}
         />
 
-        {/* Desktop composer bar — hidden below the lg breakpoint in favor of the mobile bar below. */}
+        {/* hidden below the lg breakpoint, mobile bar takes over below */}
         <div className="_feed_inner_text_area_bottom">
           <div className="_feed_inner_text_area_item">
             <PhotoButton onClick={openFilePicker} />
@@ -179,7 +175,7 @@ export function CreatePost() {
           </div>
         </div>
 
-        {/* Mobile composer bar (shown below the lg breakpoint) — same actions, compact layout. */}
+        {/* same actions as above, just laid out for small screens */}
         <div className="_feed_inner_text_area_bottom_mobile">
           <div className="_feed_inner_text_mobile">
             <div className="_feed_inner_text_area_item">

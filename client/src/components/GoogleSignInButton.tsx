@@ -42,12 +42,9 @@ interface GoogleSignInButtonProps {
   label: string;
 }
 
-/**
- * Matches the mockup's own button design instead of Google's stock widget:
- * Google's real button (an iframe) is rendered invisibly but stacked exactly
- * on top of our styled button, so a genuine click lands on the real iframe —
- * a synthetic .click() can't reach cross-origin iframe content.
- */
+// Google's real button is an iframe, so we can't just style it or fake a click on
+// it from JS (cross-origin). Instead we render our own button for looks and stack
+// the invisible real iframe exactly on top so the actual click lands on Google's widget.
 export function GoogleSignInButton({ onCredential, className, label }: GoogleSignInButtonProps) {
   const visibleButtonRef = useRef<HTMLButtonElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);

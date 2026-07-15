@@ -1,4 +1,3 @@
-// Sets up the query client/router and kicks off session restoration before render.
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -10,8 +9,7 @@ import './index.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Avoid refetching too aggressively; feed data doesn't change that fast.
-      staleTime: 30_000,
+      staleTime: 30_000, // feed doesn't change fast enough to justify refetching more often
       retry: 1,
       refetchOnWindowFocus: false,
     },

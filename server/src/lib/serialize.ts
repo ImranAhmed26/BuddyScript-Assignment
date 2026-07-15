@@ -10,7 +10,7 @@ export interface PublicUser {
   createdAt: Date;
 }
 
-/** Strips sensitive fields (passwordHash) before sending a user to the client. */
+// strips passwordHash (and anything else not in PublicUser) before this goes to the client
 export function toPublicUser(user: User): PublicUser {
   return {
     id: user.id,
@@ -22,7 +22,7 @@ export function toPublicUser(user: User): PublicUser {
   };
 }
 
-/** Compact author shape embedded in posts/comments. */
+// what gets embedded as "author" on posts/comments
 export interface AuthorSummary {
   id: string;
   firstName: string;

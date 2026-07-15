@@ -42,7 +42,6 @@ function serialize(post: PostWithAuthor, likedByMe: boolean): PostDTO {
   };
 }
 
-/** One query to resolve the viewer's like state across a page of posts (no N+1). */
 async function likedPostIds(viewerId: string, postIds: string[]): Promise<Set<string>> {
   if (postIds.length === 0) return new Set();
   const rows = await prisma.postLike.findMany({
@@ -52,13 +51,10 @@ async function likedPostIds(viewerId: string, postIds: string[]): Promise<Set<st
   return new Set(rows.map((r) => r.postId));
 }
 
-/** A post is visible if it is public or authored by the viewer. */
 const visibilityWhere = (viewerId: string): Prisma.PostWhereInput => ({
-  OR: [{ visibility: 'PUBLIC' }, { authorId: viewerId }],
+  OR: [{ visibility: 'PUBLIC' }, { authorId: viewerId }], // public posts, plus your own private ones
 });
 
-// Public posts plus the viewer's own private ones; cursor-paginated, ordered
-// by (createdAt, id) for a stable cursor.
 export async function listFeed(
   viewerId: string,
   { cursor, limit, q }: Pagination & { q?: string },
@@ -68,7 +64,7 @@ export async function listFeed(
     : visibilityWhere(viewerId);
   const rows = await prisma.post.findMany({
     where,
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], // tiebreak on id so the cursor stays stable
     take: limit + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     include: { author: { select: authorSelect } },
@@ -79,7 +75,6 @@ export async function listFeed(
   return { items: page.items.map((p) => serialize(p, liked.has(p.id))), nextCursor: page.nextCursor };
 }
 
-/** Loads a post the viewer is allowed to see, or throws 404. */
 async function loadVisiblePost(viewerId: string, postId: string): Promise<PostWithAuthor> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -97,12 +92,12 @@ export async function getPost(viewerId: string, postId: string): Promise<PostDTO
   return serialize(post, liked.has(post.id));
 }
 
-// Enforced here, not in Zod, since the image arrives via multipart upload.
 export async function createPost(
   authorId: string,
   data: { content: string; imageUrl: string | null; visibility: Visibility },
 ): Promise<PostDTO> {
   if (!data.content && !data.imageUrl) {
+    // can't check this in the Zod schema since the image comes in as a separate multipart field
     throw new ApiError(400, 'A post must include text or an image');
   }
   const post = await prisma.post.create({
@@ -112,7 +107,6 @@ export async function createPost(
   return serialize(post, false);
 }
 
-// Used by update/delete to enforce "you can only edit/remove your own posts".
 async function loadOwnedPost(userId: string, postId: string) {
   const post = await prisma.post.findUnique({ where: { id: postId } });
   if (!post) throw new ApiError(404, 'Post not found');
@@ -140,7 +134,6 @@ export async function deletePost(userId: string, postId: string): Promise<void> 
   await prisma.post.delete({ where: { id: postId } }); // cascades to comments + likes
 }
 
-// Swallows Prisma's P2002 (duplicate like) to make liking idempotent.
 export async function likePost(userId: string, postId: string): Promise<{ likeCount: number }> {
   await loadVisiblePost(userId, postId);
   try {
@@ -149,18 +142,18 @@ export async function likePost(userId: string, postId: string): Promise<{ likeCo
       prisma.post.update({ where: { id: postId }, data: { likeCount: { increment: 1 } } }),
     ]);
   } catch (err) {
-    if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')) throw err;
+    if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')) throw err; // P2002 = already liked, just ignore it
   }
   const post = await prisma.post.findUniqueOrThrow({ where: { id: postId }, select: { likeCount: true } });
   return { likeCount: post.likeCount };
 }
 
-// Only decrements when deleteMany actually removed a row, avoiding negative counts.
 export async function unlikePost(userId: string, postId: string): Promise<{ likeCount: number }> {
   await loadVisiblePost(userId, postId);
   await prisma.$transaction(async (tx) => {
     const removed = await tx.postLike.deleteMany({ where: { userId, postId } });
     if (removed.count > 0) {
+      // skip the decrement entirely if nothing was actually deleted
       await tx.post.update({ where: { id: postId }, data: { likeCount: { decrement: removed.count } } });
     }
   });

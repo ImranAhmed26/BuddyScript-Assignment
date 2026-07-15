@@ -1,4 +1,5 @@
-// No zustand persist middleware: access token stays in-memory only (XSS mitigation); session survives via httpOnly refresh cookie.
+// no zustand persist middleware on purpose. access token is memory-only;
+// the httpOnly refresh cookie is what actually survives a page reload
 import { create } from 'zustand';
 import { api, refreshAccessToken, setAccessToken, setAuthFailureHandler } from '../lib/apiClient';
 import type { User } from '../lib/types';
@@ -20,8 +21,7 @@ interface AuthResponse {
 interface AuthState {
   user: User | null;
   status: AuthStatus;
-  /** Restore a session from the refresh-token cookie on app load. */
-  bootstrap: () => Promise<void>;
+  bootstrap: () => Promise<void>; // called once on app load to restore a session from the refresh cookie
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
@@ -40,7 +40,6 @@ export const useAuthStore = create<AuthState>((set) => {
     user: null,
     status: 'loading',
 
-    // Trades the refresh cookie for a new access token, then confirms the session is valid.
     bootstrap: async () => {
       const token = await refreshAccessToken();
       if (!token) {

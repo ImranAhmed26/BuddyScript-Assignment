@@ -13,14 +13,12 @@ function readTheme(): Theme {
 }
 
 interface UiState {
-  /** Feed search term (drives the /posts?q= query). */
-  search: string;
+  search: string; // drives the /posts?q= query on the feed
   theme: Theme;
   setSearch: (search: string) => void;
   toggleTheme: () => void;
 }
 
-/** Small client-only UI state: feed search box + light/dark theme. */
 export const useUiStore = create<UiState>((set) => ({
   search: '',
   theme: readTheme(),

@@ -1,4 +1,4 @@
-// Central query key registry so posts.ts and comments.ts stay in sync when invalidating each other's caches.
+// shared so posts.ts and comments.ts invalidate the same cache entries
 export const queryKeys = {
   feed: ['feed'] as const,
   comments: (postId: string) => ['comments', postId] as const,

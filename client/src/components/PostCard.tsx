@@ -11,36 +11,31 @@ import { CommentThread } from './CommentThread';
 import { REACTIONS, reactionEmoji, reactionLabel, type ReactionKey } from '../lib/reactions';
 import { useHoverIntent } from '../lib/useHoverIntent';
 
-// Static faces for the reaction pill — decorative, not tied to actual reactions used.
+// decorative faces on the reaction pill, not tied to who actually reacted
 const REACTION_IMAGES = ['react_img1', 'react_img2', 'react_img3'];
 
-/** A single feed post: header, content, reactions, comments, edit/delete/share. */
 export function PostCard({ post }: { post: Post }) {
   const user = useAuthStore((s) => s.user);
   const toggleLike = useTogglePostLike();
   const deletePost = useDeletePost();
   const updatePost = useUpdatePost();
 
-  // Lets "Comment" actions scroll the comment section into view.
-  const commentSectionRef = useRef<HTMLDivElement>(null);
+  const commentSectionRef = useRef<HTMLDivElement>(null); // scroll target for the "Comment" action
   const [showLikers, setShowLikers] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  // "Hide" is local-only (no backend call); resets on reload.
-  const [hidden, setHidden] = useState(false);
+  const [hidden, setHidden] = useState(false); // "Hide" isn't persisted, just resets on reload
   const [copied, setCopied] = useState(false);
   const picker = useHoverIntent();
-  // Reaction type is client-side only — the API just stores a boolean like.
+  // client-side only, the API doesn't store which reaction, just a boolean like
   const [reaction, setReaction] = useState<ReactionKey | null>(post.likedByMe ? 'like' : null);
 
   const pickReaction = (key: ReactionKey) => {
     picker.hide();
     setReaction(key);
-    // Don't double-toggle the like mutation if already liked.
-    if (!post.likedByMe) toggleLike.mutate(post);
+    if (!post.likedByMe) toggleLike.mutate(post); // avoid double-toggling if already liked
   };
 
   const toggleDefaultLike = () => {
-    // Optimistic local flip; mutation reconciles with the server.
     setReaction(post.likedByMe ? null : 'like');
     toggleLike.mutate(post);
   };
@@ -62,10 +57,9 @@ export function PostCard({ post }: { post: Post }) {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/feed#post-${post.id}`);
       setCopied(true);
-      // Revert "Link copied" back to "Share" after a couple seconds.
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2000); // back to "Share" after a bit
     } catch {
-      /* clipboard unavailable — ignore */
+      // clipboard API not available, nothing to do
     }
   };
 
@@ -82,7 +76,7 @@ export function PostCard({ post }: { post: Post }) {
   };
 
   return (
-    // Anchor id lets copyLink's URL (`/feed#post-{id}`) jump to this card.
+    // id is what copyLink's #post-{id} URL scrolls to
     <div id={`post-${post.id}`} className="_feed_inner_timeline_post_area _b_radious6 _padd_b24 _padd_t24 _mar_b16">
       <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
         <div className="_feed_inner_timeline_post_top">
@@ -213,7 +207,6 @@ export function PostCard({ post }: { post: Post }) {
           )}
         </div>
         <div className="_feed_inner_timeline_total_reacts_txt">
-          {/* Scrolls to the embedded comment thread. */}
           <button
             type="button"
             className="bs-inline-btn"

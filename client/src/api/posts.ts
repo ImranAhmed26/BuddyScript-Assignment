@@ -1,4 +1,3 @@
-// Post query hooks: feed pagination, CRUD, and optimistic like/unlike (see useTogglePostLike).
 import {
   useInfiniteQuery,
   useMutation,
@@ -32,7 +31,6 @@ export function useFeed(search: string) {
 
 type FeedData = InfiniteData<Page<Post>, string | undefined>;
 
-/** Apply a transform to a single post everywhere it appears in the cached feed. */
 function patchPostInFeed(data: FeedData | undefined, postId: string, patch: (p: Post) => Post): FeedData | undefined {
   if (!data) return data;
   return {
@@ -88,7 +86,6 @@ export function useDeletePost() {
   });
 }
 
-// Optimistic like/unlike: flips cache immediately, rolls back on error, reconciles with server counts on success.
 export function useTogglePostLike() {
   const qc = useQueryClient();
   return useMutation({
@@ -99,7 +96,6 @@ export function useTogglePostLike() {
       return { postId: post.id, result: data };
     },
     onMutate: async (post) => {
-      // Cancel in-flight refetches so they can't overwrite the optimistic write.
       await qc.cancelQueries({ queryKey: queryKeys.feed });
       const previous = qc.getQueriesData<FeedData>({ queryKey: queryKeys.feed });
       qc.setQueriesData<FeedData>({ queryKey: queryKeys.feed }, (data) =>
